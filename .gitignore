@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+.DS_Store
+
+# Downloaded automatically by ensure_model_downloaded() on first run.
+hand_landmarker.task
