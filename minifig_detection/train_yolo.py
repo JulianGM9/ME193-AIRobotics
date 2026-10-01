@@ -4,8 +4,9 @@ import yaml
 from ultralytics import YOLO
 
 # Path to the Roboflow-exported dataset folder (contains data.yaml,
-# train/, valid/, test/). Edit this if you move the dataset.
-DATASET_DIR = Path("/Users/julianmoody/Downloads/Minifig")
+# train/, valid/, test/). Defaults to the copy checked into this repo;
+# edit this if you point at a different dataset.
+DATASET_DIR = Path(__file__).parent / "dataset"
 
 # Where training runs (weights, logs, plots) get written.
 RUNS_DIR = Path(__file__).parent / "runs"
