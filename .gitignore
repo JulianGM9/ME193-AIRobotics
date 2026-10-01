@@ -5,3 +5,8 @@ __pycache__/
 
 # Downloaded automatically by ensure_model_downloaded() on first run.
 hand_landmarker.task
+
+# Generated/downloaded by minifig_detection/train_yolo.py
+minifig_detection/runs/
+minifig_detection/dataset.yaml
+*.pt
