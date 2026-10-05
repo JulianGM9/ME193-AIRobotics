@@ -9,8 +9,8 @@ TOPIC = "Minifig_Julian"
 
 # Weights produced by train_yolo.py (RUNS_DIR / RUN_NAME / "weights" / "best.pt").
 # Update this if you retrain - ultralytics auto-increments the run folder
-# name (minifig_detector-2, -3, ...) rather than overwriting it.
-WEIGHTS_PATH = Path(__file__).parent / "runs" / "minifig_detector-3" / "weights" / "best.pt"
+# name (green_detector-2, -3, ...) rather than overwriting it.
+WEIGHTS_PATH = Path(__file__).parent / "runs" / "green_detector-3" / "weights" / "best.pt"
 
 CAMERA_INDEX = 0
 

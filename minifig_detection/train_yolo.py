@@ -6,11 +6,11 @@ from ultralytics import YOLO
 # Path to the Roboflow-exported dataset folder (contains data.yaml,
 # train/, valid/, test/). Defaults to the copy checked into this repo;
 # edit this if you point at a different dataset.
-DATASET_DIR = Path(__file__).parent / "dataset"
+DATASET_DIR = Path(__file__).parent / "dataset_green"
 
 # Where training runs (weights, logs, plots) get written.
 RUNS_DIR = Path(__file__).parent / "runs"
-RUN_NAME = "minifig_detector"
+RUN_NAME = "green_detector"
 
 # Pretrained weights to start from. "yolov8n.pt" (nano) is fastest and
 # works well for small datasets; swap for "yolov8s.pt" for more accuracy
