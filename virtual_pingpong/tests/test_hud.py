@@ -65,6 +65,29 @@ def test_countdown_remaining_never_goes_negative():
     assert countdown.remaining(now=10.0) == 0.0
 
 
+def test_countdown_start_can_override_duration_for_one_run():
+    countdown = Countdown(duration_seconds=3.0)
+    countdown.start(now=0.0, duration=0.5)
+    assert countdown.is_done(now=0.5) is True
+
+
+def test_countdown_duration_override_persists_until_changed_again():
+    # start()'s duration override changes the instance's duration (not
+    # just a one-off) - this is what lets a single shared Countdown
+    # instance serve both the Claude level's short pause and the regular
+    # levels' normal one, depending on which duration gets passed in.
+    countdown = Countdown(duration_seconds=3.0)
+    countdown.start(now=0.0, duration=0.5)
+    countdown.start(now=10.0)  # no override this time - keeps the last duration
+    assert countdown.is_done(now=10.5) is True
+
+
+def test_countdown_start_without_duration_keeps_the_original():
+    countdown = Countdown(duration_seconds=3.0)
+    countdown.start(now=0.0)
+    assert countdown.duration == 3.0
+
+
 # --- SwingFlash ---
 
 def test_flash_zero_before_any_trigger():

@@ -68,8 +68,13 @@ class Countdown:
         self.duration = duration_seconds
         self.started_at = None
 
-    def start(self, now):
+    def start(self, now, duration=None):
+        """duration: overrides this instance's normal duration for just
+        this run (e.g. the Claude level using a much shorter pause between
+        rallies than the regular levels, from the same shared timer)."""
         self.started_at = now
+        if duration is not None:
+            self.duration = duration
 
     def remaining(self, now):
         if self.started_at is None:

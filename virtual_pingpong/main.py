@@ -34,21 +34,26 @@ from audio.sounds import Sounds
 from game.hit_detection import FEEDBACK_MESSAGES, evaluate_hit
 from game.opponent import Opponent
 from game.opponent_animator import OpponentAnimator
-from game.physics import Ball, step
+from game.physics import Ball, predict_landing_x, step
+from game.q_learning import QLearningOpponent
 from game.state import GameState
 from imu.motor_connection import MotorConnection
 from imu.swing_detector import Calibration, SwingDetector, SwingEvent, calibrate as calibrate_swing, run_in_thread
 from net.mqtt_publisher import MqttPublisher
 from render.backgrounds import draw_background
+from render.characters import draw_opponent
+from render.claude_icon import draw_claude
 from render.hud import (
     Countdown, FeedbackBanner, SwingFlash, draw_countdown, draw_feedback_banner, draw_game_over, draw_hud,
 )
+from render.matrix_background import draw_matrix_background
 from render.menus import draw_main_menu, draw_pause_overlay
 from render.particles import ParticleBurst, draw_particles
 from render.projection import make_camera, project_point
+from render.qtable_view import draw_q_table
 from render.retro import apply_pixelation, get_retro_font
-from render.characters import draw_opponent
 from render.table_view import draw_ball, draw_net, draw_paddle, draw_table
+from render.widgets import Slider, draw_slider
 from vision.coords import shoulder_width, to_game_space
 from vision.level_selector import LevelSelector
 
@@ -83,6 +88,13 @@ SWING_SEARCH_WINDOW_MS = 500  # how far from ball arrival to look for a swing at
 HIT_GRACE_MS = 600
 COUNTDOWN_SECONDS = 3.0
 RALLY_OVER_SECONDS = 1.5
+# The Claude level has no scoring to linger on and wants episodes as fast
+# as possible for training - these replace the two above for just that
+# level (see reset_rally_without_scoring and the countdown.start() calls),
+# splitting a combined ~1 second pause between the two stages rather than
+# the normal ~4.5s (1.5 + 3.0).
+CLAUDE_RALLY_OVER_SECONDS = 0.5
+CLAUDE_COUNTDOWN_SECONDS = 0.5
 FEEDBACK_DURATION_SECONDS = 1.2
 LEVEL_CONFIRM_DISPLAY_SECONDS = 1.5  # how long "X mode selected!" shows before play starts
 SWING_FLASH_SECONDS = 0.3  # how long the paddle glows after any detected swing
@@ -379,15 +391,39 @@ def trigger_score_celebration(ball, camera, particle_burst, feedback_banner, now
         particle_burst.trigger(screen_x, screen_y, now)
 
 
+def publish_status(publisher, game_state):
+    """Broadcasts current streak, best streak, and score together - called
+    wherever any of those three actually change, so MQTT subscribers get a
+    prompt update rather than waiting on the periodic heartbeat alone."""
+    if publisher is not None:
+        publisher.publish(game_state.current_streak, game_state.record_streak,
+                           game_state.player_score, game_state.opponent_score)
+
+
 def resolve_point(game_state, winner, rally_over_timer, now):
     """Awards a point to "player" or "opponent" and returns the state to
     transition to: STATE_GAME_OVER if that point just won the match,
     otherwise STATE_RALLY_OVER (with its timer started) to continue on to
-    the next rally."""
+    the next rally. Always explicit about RALLY_OVER_SECONDS (rather than
+    relying on whatever duration the shared rally_over_timer last had) -
+    otherwise a prior Claude-level rally's shorter CLAUDE_RALLY_OVER_SECONDS
+    would silently stick around into a regular level's next point."""
     game_state.register_point(winner)
     if game_state.match_winner is not None:
         return STATE_GAME_OVER
-    rally_over_timer.start(now)
+    rally_over_timer.start(now, duration=RALLY_OVER_SECONDS)
+    return STATE_RALLY_OVER
+
+
+def reset_rally_without_scoring(rally_over_timer, now):
+    """The Claude level's equivalent of resolve_point(): there's no
+    scoring or match end for that level (the point is training, not
+    winning), so every rally just goes straight to STATE_RALLY_OVER (and
+    from there, the normal COUNTDOWN -> PLAYING flow serves a fresh ball)
+    regardless of which side "won" the exchange. Uses the short
+    CLAUDE_RALLY_OVER_SECONDS pause instead of the regular levels'
+    RALLY_OVER_SECONDS, for faster training iterations."""
+    rally_over_timer.start(now, duration=CLAUDE_RALLY_OVER_SECONDS)
     return STATE_RALLY_OVER
 
 
@@ -407,8 +443,11 @@ def main():
     # Press Start 2P (retro pixel font) renders much "wider"/denser per
     # character than a normal font at the same point size, so these sizes
     # are well below the old (None, N) defaults for a comparable footprint.
-    hud_font = get_retro_font(14)
-    skill_tag_font = get_retro_font(16)  # 14 was too small to survive pixelation legibly (B misread as D)
+    # 14 was too small to survive pixelation legibly at this font+pixel_scale
+    # combo (a "B" reliably misreads as a "D") - confirmed repeatedly across
+    # several different labels, so this is sized up globally rather than
+    # case-by-case.
+    hud_font = get_retro_font(16)
     feedback_font = get_retro_font(20)
     title_font = get_retro_font(28)
     game_over_font = get_retro_font(48)
@@ -416,6 +455,19 @@ def main():
     begin_button_rect = pygame.Rect(0, 0, 220, 60)
     begin_button_rect.center = (render_cfg["screen_width"] // 2, render_cfg["screen_height"] // 2 + 60)
     sounds = Sounds()
+
+    # --- Secret Q-learning "Claude" level (unlocked via P on level select -
+    # see the event loop below) ---
+    claude_bot = None  # a QLearningOpponent, created once the level's picked
+    claude_x = 0.0  # its paddle position - snaps straight to its chosen target, no smooth movement
+    claude_cfg = levels_cfg["definitions"]["claude"]
+    learning_rate_slider = Slider(rect=(20, render_cfg["screen_height"] - 70, 200, 10),
+                                   min_value=0.01, max_value=1.0, value=claude_cfg["q_learning_rate"],
+                                   label="LEARNING RATE")
+    exploration_rate_slider = Slider(rect=(20, render_cfg["screen_height"] - 30, 200, 10),
+                                      min_value=0.0, max_value=1.0, value=claude_cfg["q_exploration_rate"],
+                                      label="EXPLORATION RATE")
+    q_table_rect = pygame.Rect(20, 60, 180, 180)
 
     # --- IMU setup ---
     motor_connection = None
@@ -480,6 +532,23 @@ def main():
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 if state == STATE_MAIN_MENU and event.button == 1 and begin_button_rect.collidepoint(event.pos):
                     state = STATE_CONNECTING
+                elif level_name == "claude" and event.button == 1:
+                    learning_rate_slider.handle_mouse_down(event.pos)
+                    exploration_rate_slider.handle_mouse_down(event.pos)
+                    if claude_bot is not None:
+                        claude_bot.learning_rate = learning_rate_slider.value
+                        claude_bot.exploration_rate = exploration_rate_slider.value
+            elif event.type == pygame.MOUSEBUTTONUP:
+                if level_name == "claude" and event.button == 1:
+                    learning_rate_slider.handle_mouse_up()
+                    exploration_rate_slider.handle_mouse_up()
+            elif event.type == pygame.MOUSEMOTION:
+                if level_name == "claude":
+                    learning_rate_slider.handle_mouse_motion(event.pos)
+                    exploration_rate_slider.handle_mouse_motion(event.pos)
+                    if claude_bot is not None:
+                        claude_bot.learning_rate = learning_rate_slider.value
+                        claude_bot.exploration_rate = exploration_rate_slider.value
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_q:
                     running = False
@@ -493,6 +562,11 @@ def main():
                     sounds.toggle_mute()
                 elif event.key == pygame.K_SPACE and args.mock_imu:
                     swing_source.trigger(now)
+                elif state == STATE_LEVEL_SELECT and event.key == pygame.K_p and tag_selector is not None:
+                    # Placeholder unlock for the secret Q-learning "Claude"
+                    # level - not tied to any tag, just this key for now
+                    # until a real unlock condition is decided.
+                    tag_selector.select_by_key("claude")
                 elif event.key in (pygame.K_ESCAPE, pygame.K_p):
                     if state == STATE_PAUSED:
                         state = paused_from
@@ -602,24 +676,45 @@ def main():
                 if level_confirm_timer.is_done(now):
                     level_name = tag_selector.confirmed_level
                     level_cfg = levels_cfg["definitions"][level_name]
-                    opponent = Opponent({
-                        "max_speed": level_cfg["opponent_max_speed"],
-                        "reaction_delay": level_cfg["opponent_reaction_delay"],
-                        "miss_probability": level_cfg["opponent_miss_probability"],
-                        "return_speed_range": level_cfg["opponent_return_speed_range"],
-                        "return_target_spread": level_cfg["opponent_return_target_spread"],
-                    })
+                    if level_name == "claude":
+                        opponent = None
+                        # Created once and then reused across repeated
+                        # visits to this level within the same run (not
+                        # saved to disk - see game/q_learning.py) - picking
+                        # beginner then coming back to Claude later
+                        # shouldn't wipe out training progress.
+                        if claude_bot is None:
+                            claude_bot = QLearningOpponent(
+                                num_ball_buckets=level_cfg["q_num_ball_buckets"],
+                                num_paddle_buckets=level_cfg["q_num_paddle_buckets"],
+                                half_width=physics_cfg["table_width"] / 2,
+                                learning_rate=learning_rate_slider.value,
+                                exploration_rate=exploration_rate_slider.value,
+                            )
+                        claude_x = 0.0
+                    else:
+                        claude_bot = None
+                        opponent = Opponent({
+                            "max_speed": level_cfg["opponent_max_speed"],
+                            "reaction_delay": level_cfg["opponent_reaction_delay"],
+                            "miss_probability": level_cfg["opponent_miss_probability"],
+                            "return_speed_range": level_cfg["opponent_return_speed_range"],
+                            "return_target_spread": level_cfg["opponent_return_target_spread"],
+                        })
                     if isinstance(vision, VisionWorker):
                         vision.set_detect_tags(False)
                     game_state = GameState()
-                    countdown.start(now)
+                    countdown.start(now, duration=CLAUDE_COUNTDOWN_SECONDS if level_name == "claude"
+                                     else COUNTDOWN_SECONDS)
                     state = STATE_COUNTDOWN
 
         elif state == STATE_COUNTDOWN:
             if countdown.is_done(now):
                 game_state.start_rally()
                 ball = serve_ball(physics_cfg, level_cfg)
-                opponent.x = 0.0
+                if opponent is not None:
+                    opponent.x = 0.0
+                claude_x = 0.0
                 awaiting_hit = False
                 last_bounce_side = None
                 state = STATE_PLAYING
@@ -685,18 +780,22 @@ def main():
                         game_state.register_player_hit()
                         ball = apply_player_hit(ball, result_hit.quality, level_cfg, physics_cfg)
                         last_bounce_side = None  # fresh leg, needs its own bounce before landing counts
-                        opponent.notice_ball_incoming()
+                        if opponent is not None:
+                            opponent.notice_ball_incoming()
                         if motor_connection is not None:
                             motor_connection.haptic_pulse()
-                        if publisher is not None:
-                            publisher.publish(game_state.record_streak)
+                        publish_status(publisher, game_state)
                     else:
                         reason = "no_swing" if paddle_position is None else result_hit.reason
                         feedback_banner.show(FEEDBACK_MESSAGES[reason], now)
                         sounds.play(sounds.miss)
                         game_state.register_player_miss()
                         opponent_animator.trigger_score(now)
-                        state = resolve_point(game_state, "opponent", rally_over_timer, now)
+                        if level_name == "claude":
+                            state = reset_rally_without_scoring(rally_over_timer, now)
+                        else:
+                            state = resolve_point(game_state, "opponent", rally_over_timer, now)
+                            publish_status(publisher, game_state)
 
             elif result.net_hit or result.out_of_bounds:
                 # The ball hasn't bounced on the player's side yet (that
@@ -720,16 +819,23 @@ def main():
                     trigger_score_celebration(ball, camera_world, particle_burst, feedback_banner, now)
                     sounds.play(sounds.score)
                     opponent_animator.trigger_lose(now)
-                    state = resolve_point(game_state, "player", rally_over_timer, now)
+                    if level_name == "claude":
+                        state = reset_rally_without_scoring(rally_over_timer, now)
+                    else:
+                        state = resolve_point(game_state, "player", rally_over_timer, now)
+                        publish_status(publisher, game_state)
                 else:
                     feedback_banner.show("Miss!", now)
                     sounds.play(sounds.miss)
                     game_state.register_player_miss()
                     opponent_animator.trigger_score(now)
-                    state = resolve_point(game_state, "opponent", rally_over_timer, now)
+                    if level_name == "claude":
+                        state = reset_rally_without_scoring(rally_over_timer, now)
+                    else:
+                        state = resolve_point(game_state, "opponent", rally_over_timer, now)
+                        publish_status(publisher, game_state)
 
             if state == STATE_PLAYING and ball.z < 0:
-                opponent.update(ball, dt, opponent_end_z)
                 half_width = physics_cfg["table_width"] / 2
                 near_back = ball.z <= opponent_end_z + 0.1
                 # A sharply-angled shot can exit past the side of the table
@@ -748,58 +854,93 @@ def main():
                 # whoever hit it (handled by the net_hit/out_of_bounds
                 # fault-attribution above) rather than something the
                 # opponent can "catch".
-                if (near_back or near_side) and ball.vz < 0 and last_bounce_side == "opponent":
-                    # The opponent only has a chance to return the ball if
-                    # it actually got close enough (its on-screen movement
-                    # is now load-bearing, not cosmetic, and it's free to
-                    # move past the table's side edge to reach a wide ball
-                    # the same way it reaches a deep one). This used to
-                    # decide in_position once, on the very first frame the
-                    # ball entered this zone, and lock in an immediate miss
-                    # if it wasn't - but the opponent is still converging on
-                    # the ball every frame via Opponent.update(), so a
-                    # near-miss on that first frame could still have closed
-                    # the gap moments later. Now it only checks "not in
-                    # position yet, so do nothing" - the opponent keeps
-                    # trying every subsequent frame while the ball's still
-                    # catchable. If it's genuinely never reached in time,
-                    # the ball just goes out of bounds / into the net on its
-                    # own, which the net_hit/out_of_bounds block above
-                    # already scores as a point for the player (since
-                    # last_bounce_side == "opponent" by then) - so there's
-                    # no need to force that outcome here.
-                    in_position = abs(opponent.x - ball.x) <= level_cfg["opponent_hit_radius"]
-                    if in_position:
-                        # Decided once, right here: miss_probability is a
-                        # separate "skill" factor on top of actually
-                        # reaching the ball in time.
-                        outcome = opponent.decide_outcome(rng)
-                        if outcome == "miss":
-                            # The AI reached it but still whiffed - the
-                            # rally ends in the player's favor, but
-                            # current_streak counts player hits specifically
-                            # (see game/state.py), so it's left untouched
-                            # here: not incremented (the player didn't just
-                            # hit the ball) and not reset (the player didn't
-                            # miss either). It carries over into the next
-                            # rally unchanged.
-                            trigger_score_celebration(ball, camera_world, particle_burst, feedback_banner, now)
-                            sounds.play(sounds.score)
-                            opponent_animator.trigger_lose(now)
-                            state = resolve_point(game_state, "player", rally_over_timer, now)
-                        else:
-                            choice = opponent.choose_return(rng)
+                catchable = (near_back or near_side) and ball.vz < 0 and last_bounce_side == "opponent"
+
+                if level_name == "claude":
+                    # No reaction-delay/max_speed tracking here - Claude's
+                    # "movement" is just snapping straight to wherever its
+                    # policy says, the instant the ball becomes catchable
+                    # (fits the digital-presence visual, and keeps the
+                    # state/action/reward all lined up to the same instant).
+                    if catchable:
+                        predicted_x = predict_landing_x(ball, target_z=opponent_end_z)
+                        if predicted_x is None:
+                            predicted_x = ball.x
+                        q_state, q_action, target_x = claude_bot.choose_action(predicted_x, rng)
+                        claude_x = target_x
+                        if abs(target_x - ball.x) <= level_cfg["q_hit_radius"]:
+                            claude_bot.update(q_state, q_action, reward=1.0)
+                            opponent_animator.trigger_hit(now)
+                            choice = {
+                                "speed": rng.uniform(*level_cfg["opponent_return_speed_range"]),
+                                "target_x": rng.uniform(-level_cfg["opponent_return_target_spread"],
+                                                         level_cfg["opponent_return_target_spread"]),
+                            }
                             ball = apply_opponent_return(ball, choice, physics_cfg)
                             last_bounce_side = None  # fresh leg, needs its own bounce before landing counts
-                            opponent_animator.trigger_hit(now)
+                        else:
+                            claude_bot.update(q_state, q_action, reward=-1.0)
+                            opponent_animator.trigger_lose(now)
+                            state = reset_rally_without_scoring(rally_over_timer, now)
+                else:
+                    opponent.update(ball, dt, opponent_end_z)
+                    if catchable:
+                        # The opponent only has a chance to return the ball
+                        # if it actually got close enough (its on-screen
+                        # movement is now load-bearing, not cosmetic, and
+                        # it's free to move past the table's side edge to
+                        # reach a wide ball the same way it reaches a deep
+                        # one). This used to decide in_position once, on
+                        # the very first frame the ball entered this zone,
+                        # and lock in an immediate miss if it wasn't - but
+                        # the opponent is still converging on the ball
+                        # every frame via Opponent.update(), so a
+                        # near-miss on that first frame could still have
+                        # closed the gap moments later. Now it only checks
+                        # "not in position yet, so do nothing" - the
+                        # opponent keeps trying every subsequent frame
+                        # while the ball's still catchable. If it's
+                        # genuinely never reached in time, the ball just
+                        # goes out of bounds / into the net on its own,
+                        # which the net_hit/out_of_bounds block above
+                        # already scores as a point for the player (since
+                        # last_bounce_side == "opponent" by then) - so
+                        # there's no need to force that outcome here.
+                        in_position = abs(opponent.x - ball.x) <= level_cfg["opponent_hit_radius"]
+                        if in_position:
+                            # Decided once, right here: miss_probability is
+                            # a separate "skill" factor on top of actually
+                            # reaching the ball in time.
+                            outcome = opponent.decide_outcome(rng)
+                            if outcome == "miss":
+                                # The AI reached it but still whiffed - the
+                                # rally ends in the player's favor, but
+                                # current_streak counts player hits
+                                # specifically (see game/state.py), so it's
+                                # left untouched here: not incremented (the
+                                # player didn't just hit the ball) and not
+                                # reset (the player didn't miss either). It
+                                # carries over into the next rally unchanged.
+                                trigger_score_celebration(ball, camera_world, particle_burst, feedback_banner, now)
+                                sounds.play(sounds.score)
+                                opponent_animator.trigger_lose(now)
+                                state = resolve_point(game_state, "player", rally_over_timer, now)
+                                publish_status(publisher, game_state)
+                            else:
+                                choice = opponent.choose_return(rng)
+                                ball = apply_opponent_return(ball, choice, physics_cfg)
+                                last_bounce_side = None  # fresh leg, needs its own bounce before landing counts
+                                opponent_animator.trigger_hit(now)
 
             if publisher is not None:
-                publisher.maybe_heartbeat(game_state.record_streak, now)
+                publisher.maybe_heartbeat(game_state.current_streak, game_state.record_streak,
+                                          game_state.player_score, game_state.opponent_score, now)
 
         elif state == STATE_RALLY_OVER:
             if rally_over_timer.is_done(now):
                 game_state.ready_for_next_rally()
-                countdown.start(now)
+                countdown.start(now, duration=CLAUDE_COUNTDOWN_SECONDS if level_name == "claude"
+                                 else COUNTDOWN_SECONDS)
                 state = STATE_COUNTDOWN
 
         elif state == STATE_GAME_OVER:
@@ -842,12 +983,18 @@ def main():
             text = title_font.render(status_message, True, (255, 255, 255))
             screen.blit(text, text.get_rect(center=(screen.get_width() // 2, screen.get_height() // 2)))
         else:
-            draw_background(screen, level_name)
+            if level_name == "claude":
+                draw_matrix_background(screen, now, hud_font)
+            else:
+                draw_background(screen, level_name)
             draw_table(screen, camera_world, physics_cfg)
             draw_net(screen, camera_world, physics_cfg)
             if opponent is not None:
                 draw_opponent(screen, camera_world, opponent.x, physics_cfg, level_name, opponent_animator, now,
-                              feedback_font, skill_tag_font)
+                              feedback_font, hud_font)
+            elif level_name == "claude" and claude_bot is not None:
+                draw_claude(screen, camera_world, claude_x, physics_cfg, opponent_animator, now,
+                            feedback_font, hud_font)
             paddle_position, _ = vision.get_paddle_state()
             if paddle_position is not None:
                 table_x = paddle_position[0] * player_cfg["reach_scale"]
@@ -876,9 +1023,22 @@ def main():
             # (shown in the state-handling block above) carries the UI for
             # the brief pause before play begins.
 
-            draw_hud(screen, hud_font, game_state.current_streak, game_state.record_streak,
-                     game_state.player_score, game_state.opponent_score, level_name,
-                     mqtt_connected=(publisher.connected if publisher is not None else True))
+            if level_name == "claude" and claude_bot is not None:
+                # No score/streak HUD here - this level doesn't keep one
+                # (see reset_rally_without_scoring) - training stats and
+                # the live Q-table/sliders take its place instead.
+                win_rate = claude_bot.hits / claude_bot.episodes if claude_bot.episodes > 0 else 0.0
+                stats_text = (f"EPISODES: {claude_bot.episodes}  HITS: {claude_bot.hits}  "
+                              f"MISSES: {claude_bot.misses}  WIN RATE: {win_rate:.0%}")
+                stats_surf = hud_font.render(stats_text, True, (220, 220, 220))
+                screen.blit(stats_surf, (screen.get_width() - stats_surf.get_width() - 10, 10))
+                draw_q_table(screen, q_table_rect, claude_bot.q_table, hud_font)
+                draw_slider(screen, hud_font, learning_rate_slider)
+                draw_slider(screen, hud_font, exploration_rate_slider)
+            else:
+                draw_hud(screen, hud_font, game_state.current_streak, game_state.record_streak,
+                         game_state.player_score, game_state.opponent_score, level_name,
+                         mqtt_connected=(publisher.connected if publisher is not None else True))
             draw_feedback_banner(screen, feedback_font, feedback_banner, now)
             if state == STATE_COUNTDOWN:
                 draw_countdown(screen, feedback_font, countdown, now)

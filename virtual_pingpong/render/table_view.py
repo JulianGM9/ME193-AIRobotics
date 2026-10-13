@@ -23,7 +23,9 @@ PADDLE_OUTLINE_COLOR = (20, 20, 20)
 # raw pixel counts here, which produced radii in the thousands of pixels
 # and crashed pygame's circle rasterizer - see MAX_RADIUS_PX below, kept
 # as a defensive clamp against any future version of this same mistake.)
-BALL_RADIUS_M = 0.02  # a real ping-pong ball is ~40mm diameter
+BALL_RADIUS_M = 0.05  # real size is ~0.02 (40mm diameter) - exaggerated for visibility, cosmetic only,
+# doesn't affect physics (game/physics.py has no notion of ball radius at all) or hit detection
+# (game/hit_detection.py's hit_radius is a separate, pre-existing difficulty-tuned gameplay setting)
 PADDLE_FACE_RADIUS_M = 0.08
 PADDLE_HANDLE_LENGTH_M = 0.06
 PADDLE_HANDLE_WIDTH_M = 0.03
