@@ -3,7 +3,7 @@ import time
 import paho.mqtt.client as mqtt
 
 BROKER = "test.mosquitto.org"
-TOPIC = "ME193/Rogers"
+TOPIC = "ME193/Rogers/Julian"
 
 def on_message(client, userdata, message):
     print(f"Got it back: [{message.topic}] {message.payload.decode()}")

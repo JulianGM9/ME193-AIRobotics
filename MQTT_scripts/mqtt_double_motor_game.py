@@ -12,6 +12,9 @@ ANNOUNCE_TOPIC = "ME193"
 STATE_WAITING = "waiting"
 STATE_PLAYING = "playing"
 
+CARD_COLOR = le.LEGO_COLOR_YELLOW  # Connection Card color
+CARD_SERIAL = "1131"               # Connection Card serial number
+
 # Shooter/ball mode: reflected light level (0-100) above which the shooter
 # (acting as the ball) considers itself "found" and loses. Edit this value
 # to tune sensitivity.
@@ -83,7 +86,7 @@ def mourn(motor):
 def main():
     motor = le.DoubleMotor()
     print("Connecting to Double Motor...")
-    motor.connect()
+    motor.connect(card_serial=CARD_SERIAL, card_color=CARD_COLOR)
     print("Connected.")
 
     colorsensor = le.ColorSensor()

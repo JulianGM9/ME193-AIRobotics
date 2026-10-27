@@ -1,0 +1,91 @@
+{
+  "session": 2,
+  "protocol": "full",
+  "person": "julian",
+  "date": "2026-10-26 20:09:04",
+  "mount_notes": "UNO Q + MPU-6050 on outside of ankle, jumper wires",
+  "axis_map": {
+    "S": "-x",
+    "F": "-y",
+    "L": "+z"
+  },
+  "units": {
+    "accel_lsb_per_g": 2048.0,
+    "gyro_lsb_per_dps": 16.4
+  },
+  "gyro_bias_dps": {
+    "x": -7.771,
+    "y": 0.959,
+    "z": -0.001
+  },
+  "samples": 45490,
+  "gaps": 0,
+  "segments": [
+    [
+      "transition",
+      4007,
+      14007,
+      true
+    ],
+    [
+      "calibrate",
+      14007,
+      19007,
+      true
+    ],
+    [
+      "standing",
+      19007,
+      109006,
+      true
+    ],
+    [
+      "transition",
+      109006,
+      119007,
+      true
+    ],
+    [
+      "walking",
+      119007,
+      208907,
+      true
+    ],
+    [
+      "transition",
+      208907,
+      219007,
+      true
+    ],
+    [
+      "running",
+      219007,
+      308907,
+      true
+    ],
+    [
+      "transition",
+      308907,
+      328907,
+      true
+    ],
+    [
+      "biking",
+      328907,
+      418807,
+      true
+    ],
+    [
+      "transition",
+      418807,
+      428806,
+      true
+    ],
+    [
+      "lying_still",
+      428806,
+      458807,
+      true
+    ]
+  ]
+}

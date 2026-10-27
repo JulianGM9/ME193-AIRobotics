@@ -10,3 +10,21 @@ hand_landmarker.task
 minifig_detection/runs/
 minifig_detection/dataset.yaml
 *.pt
+
+# Downloaded automatically by vision/pose_tracker.py's ensure_model_downloaded()
+virtual_pingpong/vision/pose_landmarker_lite.task
+
+# IMU test recordings are just local scratch data for tuning thresholds
+virtual_pingpong/imu_recording.csv
+
+# Regenerated on demand by tools/apriltag_generator.py
+virtual_pingpong/tools/generated_tags/
+
+# Downloaded automatically by tools/paddle_tracking_test.py's ensure_hand_model_downloaded()
+virtual_pingpong/tools/hand_landmarker.task
+
+# Downloaded automatically by render/retro.py's ensure_retro_font_downloaded()
+virtual_pingpong/render/PressStart2P-Regular.ttf
+
+# Classmate code (ryancole208/ME-193-AI-Mobile-Robotics) - kept locally, not published
+Sumo/

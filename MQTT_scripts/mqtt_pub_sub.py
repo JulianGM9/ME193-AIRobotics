@@ -6,7 +6,7 @@ from datetime import datetime
 import paho.mqtt.client as mqtt
 
 BROKER = "test.mosquitto.org"
-TOPIC = "ME193"
+TOPIC = "ME193/Rogers/Julian"
 
 incoming_messages = queue.Queue()
 
