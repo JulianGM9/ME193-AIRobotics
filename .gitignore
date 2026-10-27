@@ -28,3 +28,6 @@ virtual_pingpong/render/PressStart2P-Regular.ttf
 
 # Classmate code (ryancole208/ME-193-AI-Mobile-Robotics) - kept locally, not published
 Sumo/
+
+# Design notes for the gait classifier - kept locally, not published
+gait_identification/PLAN.md
