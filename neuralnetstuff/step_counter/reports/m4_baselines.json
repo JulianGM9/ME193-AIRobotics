@@ -1,84 +1,84 @@
 {
   "summary": {
     "B1": {
-      "precision": 0.8586723768736617,
-      "recall": 0.9072398190045249,
-      "f1": 0.8822882288228823,
-      "bout_abs_err": 2.769230769230769,
-      "net_err_pct": -8.144796380090497,
-      "false_per_min": 13.071428571428571,
-      "blocks": 43
+      "precision": 0.8420168067226891,
+      "recall": 0.8667820069204152,
+      "f1": 0.8542199488491049,
+      "bout_abs_err": 3.6923076923076925,
+      "net_err_pct": -12.456747404844291,
+      "false_per_min": 12.669039145907472,
+      "blocks": 64
     },
     "B2": {
-      "precision": 0.9886877828054299,
-      "recall": 0.9886877828054299,
-      "f1": 0.9886877828054299,
-      "bout_abs_err": 0.23076923076923078,
-      "net_err_pct": -0.22624434389140272,
-      "false_per_min": 0.21428571428571427,
-      "blocks": 43
+      "precision": 0.983754512635379,
+      "recall": 0.9429065743944637,
+      "f1": 0.9628975265017667,
+      "bout_abs_err": 1.3333333333333333,
+      "net_err_pct": -4.1522491349480966,
+      "false_per_min": 0.0,
+      "blocks": 64
     },
     "oracle": {
       "precision": 1.0,
       "recall": 1.0,
       "f1": 1.0,
-      "bout_abs_err": 0.0,
+      "bout_abs_err": 0.05128205128205128,
       "net_err_pct": 0.0,
       "false_per_min": 0.0,
-      "blocks": 43
+      "blocks": 64
     }
   },
   "ci": {
     "B1": {
       "precision": [
-        0.6826624544515262,
-        0.9880482841902082
+        0.6854090497364954,
+        0.9880159252879386
       ],
       "recall": [
-        0.8206754625735913,
-        0.9678905215130256
+        0.7826750793155458,
+        0.9342724296979615
       ],
       "f1": [
-        0.7744822012930003,
-        0.959911185277591
+        0.7519339462036092,
+        0.9330722891566264
       ],
       "bout_abs_err": [
-        0.8273510971786838,
-        5.68030769230769
+        1.8285093167701865,
+        5.857509157509155
       ],
       "net_err_pct": [
-        -17.24848389119436,
-        -2.3031526463255902
+        -20.68619208196747,
+        -5.785913657882443
       ],
       "false_per_min": [
-        0.27232241077926284,
-        28.136173307191665
+        0.18193926727284646,
+        25.535802729919354
       ]
     },
     "B2": {
       "precision": [
-        0.9718269959701552,
-        1.0
+        0.962959520859149,
+        0.9983416938486376
       ],
       "recall": [
-        0.9703335840457538,
-        1.0
+        0.8936910702643062,
+        0.9812972411186697
       ],
       "f1": [
-        0.9722157320872274,
-        0.9988907246261542
+        0.929349276893901,
+        0.9883509979845929
       ],
       "bout_abs_err": [
-        0.0,
-        0.6155172413793096
+        0.42484011627907003,
+        2.457252747252747
       ],
       "net_err_pct": [
-        -1.3954301512441045,
-        0.5976095617529881
+        -8.487422087336771,
+        -1.0391083928333302
       ],
       "false_per_min": [
         0.0,
-        0.6436566948079971
+        0.0
       ]
     },
     "oracle": {
@@ -96,11 +96,11 @@
       ],
       "bout_abs_err": [
         0.0,
-        0.0
+        0.13337837837837813
       ],
       "net_err_pct": [
-        0.0,
-        0.0
+        -0.25886624160998617,
+        0.25930249525755134
       ],
       "false_per_min": [
         0.0,
@@ -118,9 +118,9 @@
           "min_gap_s": 0.3
         },
         "S002": {
-          "cutoff_hz": 5.0,
+          "cutoff_hz": 3.0,
           "height_dps": 40,
-          "prominence_dps": 120,
+          "prominence_dps": 80,
           "min_gap_s": 0.5
         },
         "S003": {
@@ -132,10 +132,28 @@
         "S004": {
           "cutoff_hz": 3.0,
           "height_dps": 40,
-          "prominence_dps": 20,
+          "prominence_dps": 80,
           "min_gap_s": 0.5
         },
         "S005": {
+          "cutoff_hz": 8.0,
+          "height_dps": 180,
+          "prominence_dps": 20,
+          "min_gap_s": 0.3
+        },
+        "S006": {
+          "cutoff_hz": 8.0,
+          "height_dps": 180,
+          "prominence_dps": 20,
+          "min_gap_s": 0.3
+        },
+        "S007": {
+          "cutoff_hz": 3.0,
+          "height_dps": 40,
+          "prominence_dps": 80,
+          "min_gap_s": 0.5
+        },
+        "S008": {
           "cutoff_hz": 8.0,
           "height_dps": 180,
           "prominence_dps": 20,
@@ -157,15 +175,15 @@
           "prominence_dps": 20,
           "min_gap_s": 0.5,
           "impact_g": 1.6,
-          "impact_window_s": 0.4
+          "impact_window_s": 0.6
         },
         "S002": {
-          "cutoff_hz": 5.0,
+          "cutoff_hz": 3.0,
           "height_dps": 40,
-          "prominence_dps": 120,
+          "prominence_dps": 20,
           "min_gap_s": 0.5,
           "impact_g": 1.6,
-          "impact_window_s": 0.4
+          "impact_window_s": 0.6
         },
         "S003": {
           "cutoff_hz": 3.0,
@@ -173,7 +191,7 @@
           "prominence_dps": 20,
           "min_gap_s": 0.5,
           "impact_g": 1.6,
-          "impact_window_s": 0.4
+          "impact_window_s": 0.6
         },
         "S004": {
           "cutoff_hz": 3.0,
@@ -181,7 +199,7 @@
           "prominence_dps": 20,
           "min_gap_s": 0.5,
           "impact_g": 1.6,
-          "impact_window_s": 0.4
+          "impact_window_s": 0.6
         },
         "S005": {
           "cutoff_hz": 3.0,
@@ -189,7 +207,31 @@
           "prominence_dps": 20,
           "min_gap_s": 0.5,
           "impact_g": 1.6,
-          "impact_window_s": 0.4
+          "impact_window_s": 0.6
+        },
+        "S006": {
+          "cutoff_hz": 3.0,
+          "height_dps": 40,
+          "prominence_dps": 20,
+          "min_gap_s": 0.5,
+          "impact_g": 1.6,
+          "impact_window_s": 0.6
+        },
+        "S007": {
+          "cutoff_hz": 3.0,
+          "height_dps": 40,
+          "prominence_dps": 20,
+          "min_gap_s": 0.5,
+          "impact_g": 1.6,
+          "impact_window_s": 0.6
+        },
+        "S008": {
+          "cutoff_hz": 3.0,
+          "height_dps": 40,
+          "prominence_dps": 20,
+          "min_gap_s": 0.5,
+          "impact_g": 1.6,
+          "impact_window_s": 0.6
         }
       },
       "all_data": {
@@ -198,7 +240,7 @@
         "prominence_dps": 20,
         "min_gap_s": 0.5,
         "impact_g": 1.6,
-        "impact_window_s": 0.4
+        "impact_window_s": 0.6
       }
     }
   }

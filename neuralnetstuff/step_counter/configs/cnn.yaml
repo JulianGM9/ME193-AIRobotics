@@ -1,0 +1,25 @@
+# Dilated 1D CNN, candidate A (PLAN.md D10, D12). Override any key from the command line:
+#   ../../.venv/bin/python scripts/train.py --loso model.channels=[16,32,64,64,64] train.epochs=40
+name: cnn
+data:
+  window: 256
+  target_sigma: 5.0
+  windows_per_epoch: 3000
+  rotate_deg: 10.0
+  scale: 0.10
+model:
+  channels: [16, 32, 32, 32, 32]
+  dilations: [1, 2, 4, 8, 16]
+  kernel: 7
+  dropout: 0.1
+train:
+  epochs: 30
+  batch: 64
+  lr: 0.001
+  weight_decay: 0.0001
+  pos_weight: 20.0
+  seed: 0
+detect:
+  threshold: 0.5
+  min_gap_s: 0.3
+  hop: 64

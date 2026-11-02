@@ -13,10 +13,12 @@ B2  B1 + a heel-strike gate: a real stride ends with the foot landing, so the sw
 Both are tuned by grid search on training sessions only (see scripts/evaluate_baselines.py).
 """
 import itertools
+import time
 
 import numpy as np
 from scipy.signal import butter, filtfilt, find_peaks
 
+from stepnet.eval.metrics import block_rows, tuning_loss
 from stepnet.io.protocol import SAMPLE_RATE_HZ
 
 B1_GRID = {
@@ -73,3 +75,24 @@ class Detector:
             keep = [i for i in idx if i + lo < n and self.acc_mag[i + lo:min(n, i + hi)].max() >= p["impact_g"]]
             idx = np.asarray(keep, dtype=np.int64)
         return self.s.seq[idx]
+
+
+def loso(name, spec, data, detectors):
+    """Leave-one-session-out: tune on the other sessions, run on the held-out one.
+
+    Returns (held-out rows of all folds, {session: params}, params tuned on every session).
+    """
+    sessions = list(data)
+    candidates = grid(spec)
+    t0 = time.time()
+    loss = np.array([[tuning_loss(block_rows(data[s].blocks, {s: detectors[s].detect(p)})) for s in sessions]
+                     for p in candidates])
+    print(f"{name}: {len(candidates)} parameter sets x {len(sessions)} sessions in {time.time() - t0:.0f} s")
+    rows, folds = [], {}
+    for k, held in enumerate(sessions):
+        train_loss = loss.sum(axis=1) - loss[:, k]
+        best = candidates[int(np.argmin(train_loss))]
+        folds[held] = best
+        rows += block_rows(data[held].blocks, {held: detectors[held].detect(best)})
+    all_data = candidates[int(np.argmin(loss.sum(axis=1)))]
+    return rows, folds, all_data

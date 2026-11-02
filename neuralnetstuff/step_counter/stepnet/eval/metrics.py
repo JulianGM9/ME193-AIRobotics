@@ -71,3 +71,27 @@ def bootstrap(rows, n=2000, seed=0, level=0.95) -> dict:
 def tuning_loss(rows) -> float:
     """What grid search minimizes on training sessions: total |count error| in steps, over all blocks."""
     return float(sum(abs(r["count_err"]) for r in rows))
+
+
+HARD_ACTIVITIES = ("shuffle", "foot_tap_seated")  # + every counted block (PLAN.md D14)
+
+
+def is_hard(row) -> bool:
+    return row["kind"] == "counted" or row["activity"] in HARD_ACTIVITIES
+
+
+def paired_bootstrap(rows_a, rows_b, key, n=2000, seed=0, level=0.95) -> tuple[float, float, float]:
+    """(difference, low, high) of summarize(a)[key] - summarize(b)[key], resampling the SAME blocks.
+
+    Both models are scored on identical blocks, so resampling them together cancels the
+    block-to-block variation they share: a much sharper test than comparing two separate CIs.
+    """
+    rows_a, rows_b = list(rows_a), list(rows_b)
+    assert [(r["session"], r["i"]) for r in rows_a] == [(r["session"], r["i"]) for r in rows_b]
+    rng = np.random.default_rng(seed)
+    diffs = []
+    for _ in range(n):
+        k = rng.integers(0, len(rows_a), len(rows_a))
+        diffs.append(summarize([rows_a[i] for i in k])[key] - summarize([rows_b[i] for i in k])[key])
+    lo, hi = np.percentile(diffs, [100 * (1 - level) / 2, 100 * (1 + level) / 2])
+    return summarize(rows_a)[key] - summarize(rows_b)[key], float(lo), float(hi)

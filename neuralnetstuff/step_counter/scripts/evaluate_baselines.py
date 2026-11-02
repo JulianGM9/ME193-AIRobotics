@@ -19,32 +19,15 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from stepnet.baselines import B1_GRID, B2_GRID, Detector, grid
+from stepnet.baselines import B1_GRID, B2_GRID, Detector, loso
 from stepnet.data.blocks import load_session, real_sessions
-from stepnet.eval.metrics import block_rows, bootstrap, summarize, tuning_loss
+from stepnet.eval.metrics import block_rows, bootstrap, summarize
 
 REPORTS = Path(__file__).resolve().parents[1] / "reports"
 METRICS = [("f1", "stride F1", "{:.3f}"), ("recall", "recall", "{:.3f}"), ("precision", "precision", "{:.3f}"),
            ("bout_abs_err", "mean abs count error per bout (steps)", "{:.2f}"),
            ("net_err_pct", "net count error, all bouts (%)", "{:+.1f}"),
            ("false_per_min", "false strides / min in no-step blocks", "{:.1f}")]
-
-
-def loso(name, spec, data, detectors):
-    sessions = list(data)
-    candidates = grid(spec)
-    t0 = time.time()
-    loss = np.array([[tuning_loss(block_rows(data[s].blocks, {s: detectors[s].detect(p)})) for s in sessions]
-                     for p in candidates])
-    print(f"{name}: {len(candidates)} parameter sets x {len(sessions)} sessions in {time.time() - t0:.0f} s")
-    rows, folds = [], {}
-    for k, held in enumerate(sessions):
-        train_loss = loss.sum(axis=1) - loss[:, k]
-        best = candidates[int(np.argmin(train_loss))]
-        folds[held] = best
-        rows += block_rows(data[held].blocks, {held: detectors[held].detect(best)})
-    all_data = candidates[int(np.argmin(loss.sum(axis=1)))]
-    return rows, folds, all_data
 
 
 def fmt_ci(summary, ci, key, f):
@@ -161,7 +144,7 @@ def main():
              f"Generated {time.strftime('%Y-%m-%d %H:%M')} by `scripts/evaluate_baselines.py`. "
              f"{len(sessions)} sessions ({', '.join(sessions)}), {len(blocks)} usable blocks, "
              f"{sum(len(b.strides) for b in blocks)} labeled strides. Each session's numbers come from parameters "
-             "tuned on the other four. Values: point estimate [95% bootstrap CI over blocks].", "",
+             "tuned on the other sessions. Values: point estimate [95% bootstrap CI over blocks].", "",
              "| metric | B1 peak detection | B2 + heel-strike gate | oracle (labels) |", "|---|---|---|---|"]
     for key, label, f in METRICS:
         lines.append(f"| {label} | " + " | ".join(fmt_ci(summaries[m], cis[m], key, f) for m in ("B1", "B2", "oracle")) + " |")

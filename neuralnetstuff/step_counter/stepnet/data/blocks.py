@@ -62,5 +62,11 @@ def load_session(session, raw_dir=RAW_DIR, labels_dir=lab.LABELS_DIR) -> Session
     return data
 
 
-def real_sessions(raw_dir=RAW_DIR) -> list[str]:
-    return sorted(p.name for p in raw_dir.glob("S[0-9][0-9][0-9]"))
+# The locked test set (PLAN.md D9): never trained or tuned on, evaluated once at M10.
+TEST_SESSIONS = ("S009", "S010")
+
+
+def real_sessions(raw_dir=RAW_DIR, include_test=False) -> list[str]:
+    """Real sessions (S###). The locked test sessions are left out unless include_test=True."""
+    ids = sorted(p.name for p in raw_dir.glob("S[0-9][0-9][0-9]"))
+    return ids if include_test else [s for s in ids if s not in TEST_SESSIONS]

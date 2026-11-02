@@ -58,3 +58,11 @@ def test_rows_and_summary():
 
 def test_grid_is_the_full_product():
     assert len(grid({"a": [1, 2], "b": [3, 4, 5]})) == 6
+
+
+def test_test_sessions_are_locked_by_default(tmp_path):
+    from stepnet.data.blocks import TEST_SESSIONS, real_sessions
+    for sid in ("S001", "S008", *TEST_SESSIONS):
+        (tmp_path / sid).mkdir()
+    assert real_sessions(tmp_path) == ["S001", "S008"]
+    assert real_sessions(tmp_path, include_test=True) == ["S001", "S008", *TEST_SESSIONS]

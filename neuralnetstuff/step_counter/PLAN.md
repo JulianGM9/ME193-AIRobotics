@@ -1,6 +1,6 @@
 # Ankle IMU Step Counter: Design Plan
 
-**Status:** Plan approved 2026-11-02. M0–M3 and Guided session 1 done (S001–S005, 442 usable strides). M4 done; D14 revised and protocol C added. Next: record sessions 6–10 (C, B, C, A, C), then M5.
+**Status:** Plan approved 2026-11-02. M0–M4 and Guided sessions 1 + 3 done (10 sessions; training S001–S008 = 578 usable strides; locked test S009/S010 = 179). **Deadline 2026-11-03: scope trimmed (see the milestone table).** M5 in progress.
 **Hardware:** Arduino UNO Q + MPU-6050 worn on the ankle. Battery is strapped to the thigh.
 **Environment:** repo root `.venv` (Python 3.13, torch 2.14). Run from `neuralnetstuff/step_counter/`.
 **How we work:** small milestones, each one verified before the next. After each guided session we review the results and decide what to try next. Feature ideas from the [ideas backlog](#ideas-backlog) are built only when Julian picks them.
@@ -102,14 +102,14 @@ neuralnetstuff/step_counter/
 | M3 | Backend/web skeleton + Label view | Dry run labeled, bout checks pass | done 2026-11-02 (T002 labeled; all controls verified by Julian) |
 | S1 | **Guided session 1:** record and label about 5 sessions | | |
 | M4 | Baselines B1/B2 + evaluation harness | Results walkthrough | built 2026-11-02 (`scripts/evaluate_baselines.py` → `reports/m4_baselines.md`); done 2026-11-02: results walked through, and the criterion revised (D14) |
-| M5 | Configs, dataset versions, tracking + CNN (synthetic → real) | **Guided session 2:** CNN vs. baselines | |
+| M5 | Configs, dataset versions, tracking + CNN (synthetic → real) | **Guided session 2:** CNN vs. baselines | in progress |
 | S3 | **Guided session 3:** about 5 more sessions, lock the test set | | |
 | M6 | Ensemble + uncertainty stack + calibration reports | **Guided session 4:** coverage study | |
-| M7 | Live engine + Live view + replay | Replayed session, then a live walk | |
-| M8 | Datasets / Train / Compare views | Train and compare from the UI | |
-| M9 | TCN and GRU experiments | **Guided session 5:** architecture comparison | |
+| M7 | Live engine + Live view + replay | Replayed session, then a live walk | slimmed: IMU + stride markers, count ± interval, CNN activations |
+| M8 | Datasets / Train / Compare views | Train and compare from the UI | **cut** (deadline): the command-line scripts cover this |
+| M9 | TCN and GRU experiments | **Guided session 5:** architecture comparison | **cut** (deadline); one quick TCN run only if time allows |
 | M10 | One-time final evaluation on the test set | Final report | |
-| M11 | Stretch: distance estimation (stride-length regression / ZUPT / calibration walks; separate mini-planning) | | |
+| M11 | ~~Stretch: distance estimation (stride-length regression / ZUPT / calibration walks; separate mini-planning)~~ | | **cut** (deadline) |
 
 ## Ideas backlog
 
@@ -147,3 +147,4 @@ These happen only after sign-off.
 - 2026-11-02 (M4): leave-one-session-out on S001–S005 (43 blocks), 95% bootstrap CIs over blocks. **B1:** F1 0.88, mean |bout error| 2.77 steps, 13.1 false strides/min in no-step blocks (59 on seated leg swings). It has to trade missing stairs and shuffles against counting leg swings, so its tuned parameters jump between folds. **B2:** F1 0.989, 0.23 steps/bout, 0.2 false/min, net −0.2%, with the same parameters in 4 of 5 folds (1.6 g impact, 0.4 s window). Its remaining errors are shuffle (−4 steps in one bout: gentle landings miss the impact gate), foot taps (2 false), and stride timing on stairs up. The oracle is 0 because every usable block passes the ±1 count check and the bouts have even targets. **Implication:** on protocol data B2 is near the floor, so D14's "beat B2 with non-overlapping CIs" is probably unreachable here, and the criterion needs revisiting (see the discussion with Julian).
 - 2026-11-02: Julian chose options A + B: add protocol C (without adding sessions) and revise D14. Deadline is approaching, so the remaining scope will be trimmed if needed.
 - 2026-11-02 (Guided session 3): S008's turning and side/back steps had no L-gyro dips, so the event definition was extended (D6). The labeler now shows |ω| (categorical slot 4), proposes |ω| peaks in counted blocks (6 Hz low-pass, height 80 deg/s, prominence 50, gap 0.35 s, dropped if within 0.2 s of an L candidate), snaps with `w` to the |ω| peak (`s` still snaps to the L minimum), and ⌥-click picks the more salient one. Label files now store the candidates that were shown, so new or unreviewed candidates reload as undecided instead of rejected. B2 still uses only the L gyro, so it is blind to these steps by design: that is where the network can win (D14).
+- 2026-11-02: deadline is tomorrow, so the remaining order is M5 → M6 → M10 (final test) → slim M7 → deliverables; M8, M9 and M11 are cut. Test sessions are now locked in code (`real_sessions()` leaves out S009/S010 unless `include_test=True`). M4 re-run on the 8 training sessions: B2 F1 0.963, 1.33 steps/block, net −4.2% (protocol C made it harder).
