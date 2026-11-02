@@ -178,10 +178,12 @@
       "go_seq": null,
       "end_seq": 116479,
       "target_steps": null,
-      "steps": 16,
+      "steps": 12,
       "ok": true,
       "timed_out": false,
-      "start_seq_at_beep": 113469
+      "start_seq_at_beep": 113469,
+      "steps_original": 16,
+      "steps_correction": "typo when entering the count; Julian remembers counting 12 (corrected 2026-11-02)"
     },
     {
       "i": 10,
