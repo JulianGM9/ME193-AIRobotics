@@ -47,10 +47,30 @@ def missing_seqs(samples) -> np.ndarray:
     return np.setdiff1d(np.arange(seqs[0], seqs[-1] + 1), seqs)
 
 
+def read_board_log(board_csv) -> tuple[np.ndarray, int]:
+    """The board's backup log as (n, 8) samples, plus how many unreadable lines were skipped.
+
+    The board can lose power mid-write (the battery is unplugged), which leaves a truncated
+    last line or a run of NUL bytes at the end of the file.
+    """
+    rows, bad = [], 0
+    with open(board_csv, "rb") as f:
+        next(f, None)  # header
+        for line in f:
+            parts = line.strip(b"\0\r\n ").split(b",")
+            try:
+                if len(parts) != len(COLUMNS):
+                    raise ValueError
+                rows.append([int(v) for v in parts])
+            except ValueError:
+                bad += 1
+    return np.array(rows, dtype=np.int64).reshape(-1, len(COLUMNS)), bad
+
+
 def fill_gaps(session_dir, board_csv) -> int:
     """Fill missing samples from the board's backup log (same run). Returns how many were filled."""
     samples, meta = read_session(session_dir)
-    board = np.loadtxt(board_csv, dtype=np.int64, delimiter=",", skiprows=1, ndmin=2)
+    board, _ = read_board_log(board_csv)
     missing = missing_seqs(samples)
     found = board[np.isin(board[:, 0], missing)]
     if len(found) == 0:

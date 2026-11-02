@@ -79,3 +79,13 @@ def test_protocols_are_well_formed():
     assert any(s.optional == "stairs" for s in PROTOCOLS["A"])
     assert all(s.optional is None for s in steps_for("A"))
     assert len(steps_for("A", {"stairs"})) == len(PROTOCOLS["A"])
+
+
+def test_board_log_with_power_loss_garbage(tmp_path):
+    good = make_samples(range(0, 5))
+    path = tmp_path / "stream_x.csv"
+    text = "seq,t_ms,ax,ay,az,gx,gy,gz\n" + "\n".join(",".join(map(str, r)) for r in good) + "\n"
+    path.write_bytes(text.encode() + b"5,50,-20" + b"\0" * 40)  # truncated last line, then NULs
+    from stepnet.io.session import read_board_log
+    rows, bad = read_board_log(path)
+    assert np.array_equal(rows, good) and bad == 1

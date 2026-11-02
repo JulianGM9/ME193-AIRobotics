@@ -80,7 +80,7 @@
   "hallway_m": 7.62,
   "lag_samples": 30,
   "samples": 31941,
-  "missing": 260,
+  "missing": 0,
   "segments": [
     {
       "i": 2,
@@ -230,5 +230,6 @@
       "ok": true,
       "timed_out": false
     }
-  ]
+  ],
+  "filled_from_board": 260
 }
