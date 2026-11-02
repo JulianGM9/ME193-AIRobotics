@@ -1,0 +1,205 @@
+{
+  "summary": {
+    "B1": {
+      "precision": 0.8586723768736617,
+      "recall": 0.9072398190045249,
+      "f1": 0.8822882288228823,
+      "bout_abs_err": 2.769230769230769,
+      "net_err_pct": -8.144796380090497,
+      "false_per_min": 13.071428571428571,
+      "blocks": 43
+    },
+    "B2": {
+      "precision": 0.9886877828054299,
+      "recall": 0.9886877828054299,
+      "f1": 0.9886877828054299,
+      "bout_abs_err": 0.23076923076923078,
+      "net_err_pct": -0.22624434389140272,
+      "false_per_min": 0.21428571428571427,
+      "blocks": 43
+    },
+    "oracle": {
+      "precision": 1.0,
+      "recall": 1.0,
+      "f1": 1.0,
+      "bout_abs_err": 0.0,
+      "net_err_pct": 0.0,
+      "false_per_min": 0.0,
+      "blocks": 43
+    }
+  },
+  "ci": {
+    "B1": {
+      "precision": [
+        0.6826624544515262,
+        0.9880482841902082
+      ],
+      "recall": [
+        0.8206754625735913,
+        0.9678905215130256
+      ],
+      "f1": [
+        0.7744822012930003,
+        0.959911185277591
+      ],
+      "bout_abs_err": [
+        0.8273510971786838,
+        5.68030769230769
+      ],
+      "net_err_pct": [
+        -17.24848389119436,
+        -2.3031526463255902
+      ],
+      "false_per_min": [
+        0.27232241077926284,
+        28.136173307191665
+      ]
+    },
+    "B2": {
+      "precision": [
+        0.9718269959701552,
+        1.0
+      ],
+      "recall": [
+        0.9703335840457538,
+        1.0
+      ],
+      "f1": [
+        0.9722157320872274,
+        0.9988907246261542
+      ],
+      "bout_abs_err": [
+        0.0,
+        0.6155172413793096
+      ],
+      "net_err_pct": [
+        -1.3954301512441045,
+        0.5976095617529881
+      ],
+      "false_per_min": [
+        0.0,
+        0.6436566948079971
+      ]
+    },
+    "oracle": {
+      "precision": [
+        1.0,
+        1.0
+      ],
+      "recall": [
+        1.0,
+        1.0
+      ],
+      "f1": [
+        1.0,
+        1.0
+      ],
+      "bout_abs_err": [
+        0.0,
+        0.0
+      ],
+      "net_err_pct": [
+        0.0,
+        0.0
+      ],
+      "false_per_min": [
+        0.0,
+        0.0
+      ]
+    }
+  },
+  "params": {
+    "B1": {
+      "per_fold": {
+        "S001": {
+          "cutoff_hz": 8.0,
+          "height_dps": 180,
+          "prominence_dps": 20,
+          "min_gap_s": 0.3
+        },
+        "S002": {
+          "cutoff_hz": 5.0,
+          "height_dps": 40,
+          "prominence_dps": 120,
+          "min_gap_s": 0.5
+        },
+        "S003": {
+          "cutoff_hz": 8.0,
+          "height_dps": 180,
+          "prominence_dps": 20,
+          "min_gap_s": 0.3
+        },
+        "S004": {
+          "cutoff_hz": 3.0,
+          "height_dps": 40,
+          "prominence_dps": 20,
+          "min_gap_s": 0.5
+        },
+        "S005": {
+          "cutoff_hz": 8.0,
+          "height_dps": 180,
+          "prominence_dps": 20,
+          "min_gap_s": 0.3
+        }
+      },
+      "all_data": {
+        "cutoff_hz": 8.0,
+        "height_dps": 180,
+        "prominence_dps": 20,
+        "min_gap_s": 0.3
+      }
+    },
+    "B2": {
+      "per_fold": {
+        "S001": {
+          "cutoff_hz": 3.0,
+          "height_dps": 40,
+          "prominence_dps": 20,
+          "min_gap_s": 0.5,
+          "impact_g": 1.6,
+          "impact_window_s": 0.4
+        },
+        "S002": {
+          "cutoff_hz": 5.0,
+          "height_dps": 40,
+          "prominence_dps": 120,
+          "min_gap_s": 0.5,
+          "impact_g": 1.6,
+          "impact_window_s": 0.4
+        },
+        "S003": {
+          "cutoff_hz": 3.0,
+          "height_dps": 40,
+          "prominence_dps": 20,
+          "min_gap_s": 0.5,
+          "impact_g": 1.6,
+          "impact_window_s": 0.4
+        },
+        "S004": {
+          "cutoff_hz": 3.0,
+          "height_dps": 40,
+          "prominence_dps": 20,
+          "min_gap_s": 0.5,
+          "impact_g": 1.6,
+          "impact_window_s": 0.4
+        },
+        "S005": {
+          "cutoff_hz": 3.0,
+          "height_dps": 40,
+          "prominence_dps": 20,
+          "min_gap_s": 0.5,
+          "impact_g": 1.6,
+          "impact_window_s": 0.4
+        }
+      },
+      "all_data": {
+        "cutoff_hz": 3.0,
+        "height_dps": 40,
+        "prominence_dps": 20,
+        "min_gap_s": 0.5,
+        "impact_g": 1.6,
+        "impact_window_s": 0.4
+      }
+    }
+  }
+}
