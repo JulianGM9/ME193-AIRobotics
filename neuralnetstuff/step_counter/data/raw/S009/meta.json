@@ -1,0 +1,255 @@
+{
+  "session": "S009",
+  "protocol": "A",
+  "person": "julian",
+  "ankle": "right",
+  "mount_notes": "UNO Q + MPU-6050 on the outside of the right ankle",
+  "notes": "",
+  "recorded_at": "2026-11-02 17:46:08",
+  "board_run": "20261102_220010",
+  "axis_map": {
+    "S": "-x",
+    "F": "-y",
+    "L": "+z"
+  },
+  "accel_calibration": {
+    "offset_g": [
+      0.028826497395833373,
+      -0.005572916666666705,
+      0.18979492187499997
+    ],
+    "scale": [
+      1.0069970703125,
+      1.0061686197916666,
+      1.0287923177083333
+    ],
+    "calibrated_at": "2026-11-02 14:26:44",
+    "pose_means_g": [
+      [
+        -0.9782,
+        -0.0118,
+        0.2142
+      ],
+      [
+        1.0358,
+        0.002,
+        0.181
+      ],
+      [
+        0.0368,
+        -1.0117,
+        0.2039
+      ],
+      [
+        0.0262,
+        1.0006,
+        0.1867
+      ],
+      [
+        0.0405,
+        -0.0081,
+        -0.839
+      ],
+      [
+        0.0575,
+        -0.0028,
+        1.2186
+      ]
+    ],
+    "norm_after_g": [
+      1.0003,
+      1.0001,
+      1.0001,
+      1.0,
+      1.0001,
+      1.0004
+    ]
+  },
+  "gyro_bias_dps": [
+    -7.978,
+    0.521,
+    -0.447
+  ],
+  "gravity_body_g": [
+    0.9901,
+    -0.0352,
+    0.1913
+  ],
+  "orientation_error_deg": 11.12,
+  "orientation_change_deg": 2.25,
+  "hallway_m": 7.62,
+  "lag_samples": 30,
+  "counted_start": "instruction",
+  "samples": 36591,
+  "missing": 0,
+  "segments": [
+    {
+      "i": 2,
+      "kind": "transition",
+      "label": "to_start",
+      "start_seq": 232319,
+      "go_seq": null,
+      "end_seq": 233829,
+      "target_steps": null,
+      "steps": null,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 3,
+      "kind": "hold",
+      "label": "stand",
+      "start_seq": 234049,
+      "go_seq": null,
+      "end_seq": 235029,
+      "target_steps": null,
+      "steps": 0,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 4,
+      "kind": "bout",
+      "label": "walk_slow",
+      "start_seq": 235029,
+      "go_seq": 235829,
+      "end_seq": 238200,
+      "target_steps": 30,
+      "steps": 30,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 5,
+      "kind": "bout",
+      "label": "walk_normal",
+      "start_seq": 238329,
+      "go_seq": 239069,
+      "end_seq": 241550,
+      "target_steps": 40,
+      "steps": 40,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 6,
+      "kind": "bout",
+      "label": "walk_fast",
+      "start_seq": 241679,
+      "go_seq": 242449,
+      "end_seq": 244610,
+      "target_steps": 40,
+      "steps": 40,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 7,
+      "kind": "bout",
+      "label": "run",
+      "start_seq": 244739,
+      "go_seq": 245159,
+      "end_seq": 247000,
+      "target_steps": 40,
+      "steps": 40,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 8,
+      "kind": "bout",
+      "label": "shuffle",
+      "start_seq": 247129,
+      "go_seq": 247629,
+      "end_seq": 249450,
+      "target_steps": 30,
+      "steps": 30,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 9,
+      "kind": "transition",
+      "label": "to_stairs",
+      "start_seq": 250029,
+      "go_seq": null,
+      "end_seq": 253029,
+      "target_steps": null,
+      "steps": null,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 10,
+      "kind": "bout",
+      "label": "stairs_up",
+      "start_seq": 253029,
+      "go_seq": 253589,
+      "end_seq": 255030,
+      "target_steps": null,
+      "steps": 24,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 11,
+      "kind": "transition",
+      "label": "turn_at_top",
+      "start_seq": 255509,
+      "go_seq": null,
+      "end_seq": 256329,
+      "target_steps": null,
+      "steps": null,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 12,
+      "kind": "bout",
+      "label": "stairs_down",
+      "start_seq": 256329,
+      "go_seq": 256859,
+      "end_seq": 258220,
+      "target_steps": null,
+      "steps": 24,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 13,
+      "kind": "transition",
+      "label": "to_hallway",
+      "start_seq": 258719,
+      "go_seq": null,
+      "end_seq": 261749,
+      "target_steps": null,
+      "steps": null,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 14,
+      "kind": "bout",
+      "label": "walk_normal_2",
+      "start_seq": 261749,
+      "go_seq": 262529,
+      "end_seq": 265080,
+      "target_steps": 40,
+      "steps": 40,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 15,
+      "kind": "hold",
+      "label": "stand",
+      "start_seq": 265479,
+      "go_seq": null,
+      "end_seq": 266459,
+      "target_steps": null,
+      "steps": 0,
+      "ok": true,
+      "timed_out": false
+    }
+  ]
+}
