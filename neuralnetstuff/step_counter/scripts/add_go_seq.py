@@ -1,4 +1,8 @@
-"""One-time fix: estimate "Go" for bouts recorded before record.py saved it (PLAN.md change log).
+"""One-time fixes for sessions recorded before two recorder changes (PLAN.md change log):
+
+  1. bouts: estimate "Go" (go_seq), which record.py didn't save yet
+  2. counted blocks: move start_seq back to the start of the instruction (they used to start
+     at the beep, so steps taken while the instruction played fell outside the block)
 
   ../../.venv/bin/python scripts/add_go_seq.py            # every session that needs it
   ../../.venv/bin/python scripts/add_go_seq.py S003 S005
@@ -44,17 +48,27 @@ def main():
             print(f"{sid}: recorded before bouts started at the instruction - start_seq is Go, nothing to do")
             continue
         say_by_label = {st.label: st.say for st in PROTOCOLS[meta["protocol"]] if st.kind == "bout"}
-        changed = 0
+        say_by_label.update({st.label: st.say for st in PROTOCOLS[meta["protocol"]] if st.kind == "counted"})
+        changed = moved = 0
+        prev_end = None
         for seg in meta["segments"]:
-            if seg["kind"] != "bout" or seg.get("go_seq"):
-                continue
-            secs = instruction_seconds(say_by_label[seg["label"]]) + SAY_STARTUP_S
-            seg["go_seq"] = seg["start_seq"] + int(round(secs * SAMPLE_RATE_HZ))
-            seg["go_seq_estimated"] = True
-            changed += 1
-        if changed:
+            if seg["kind"] == "bout" and not seg.get("go_seq"):
+                secs = instruction_seconds(say_by_label[seg["label"]]) + SAY_STARTUP_S
+                seg["go_seq"] = seg["start_seq"] + int(round(secs * SAMPLE_RATE_HZ))
+                seg["go_seq_estimated"] = True
+                changed += 1
+            # newer recordings say so in meta and already start counted blocks at the instruction
+            if (seg["kind"] == "counted" and "start_seq_at_beep" not in seg
+                    and meta.get("counted_start") != "instruction"):
+                secs = instruction_seconds(say_by_label[seg["label"]]) + SAY_STARTUP_S
+                seg["start_seq_at_beep"] = seg["start_seq"]
+                start = seg["start_seq"] - int(round(secs * SAMPLE_RATE_HZ))
+                seg["start_seq"] = max(start, prev_end) if prev_end is not None else start
+                moved += 1
+            prev_end = seg["end_seq"]
+        if changed or moved:
             write_meta(RAW_DIR / sid, meta)
-        print(f"{sid}: estimated Go for {changed} bouts")
+        print(f"{sid}: estimated Go for {changed} bouts, moved {moved} counted blocks to their instruction start")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,218 @@
+{
+  "session": "S007",
+  "protocol": "B",
+  "person": "julian",
+  "ankle": "right",
+  "mount_notes": "UNO Q + MPU-6050 on the outside of the right ankle",
+  "notes": "",
+  "recorded_at": "2026-11-02 17:14:50",
+  "board_run": "20261102_220010",
+  "axis_map": {
+    "S": "-x",
+    "F": "-y",
+    "L": "+z"
+  },
+  "accel_calibration": {
+    "offset_g": [
+      0.028826497395833373,
+      -0.005572916666666705,
+      0.18979492187499997
+    ],
+    "scale": [
+      1.0069970703125,
+      1.0061686197916666,
+      1.0287923177083333
+    ],
+    "calibrated_at": "2026-11-02 14:26:44",
+    "pose_means_g": [
+      [
+        -0.9782,
+        -0.0118,
+        0.2142
+      ],
+      [
+        1.0358,
+        0.002,
+        0.181
+      ],
+      [
+        0.0368,
+        -1.0117,
+        0.2039
+      ],
+      [
+        0.0262,
+        1.0006,
+        0.1867
+      ],
+      [
+        0.0405,
+        -0.0081,
+        -0.839
+      ],
+      [
+        0.0575,
+        -0.0028,
+        1.2186
+      ]
+    ],
+    "norm_after_g": [
+      1.0003,
+      1.0001,
+      1.0001,
+      1.0,
+      1.0001,
+      1.0004
+    ]
+  },
+  "gyro_bias_dps": [
+    -8.009,
+    0.931,
+    0.035
+  ],
+  "gravity_body_g": [
+    0.9937,
+    -0.0961,
+    0.1409
+  ],
+  "orientation_error_deg": 9.74,
+  "orientation_change_deg": 1.73,
+  "hallway_m": 7.62,
+  "lag_samples": 30,
+  "samples": 27311,
+  "missing": 0,
+  "segments": [
+    {
+      "i": 2,
+      "kind": "transition",
+      "label": "to_start",
+      "start_seq": 53329,
+      "go_seq": null,
+      "end_seq": 54839,
+      "target_steps": null,
+      "steps": null,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 3,
+      "kind": "hold",
+      "label": "stand",
+      "start_seq": 55049,
+      "go_seq": null,
+      "end_seq": 56539,
+      "target_steps": null,
+      "steps": 0,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 4,
+      "kind": "hold",
+      "label": "fidget_standing",
+      "start_seq": 57179,
+      "go_seq": null,
+      "end_seq": 60189,
+      "target_steps": null,
+      "steps": 0,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 5,
+      "kind": "bout",
+      "label": "walk_normal",
+      "start_seq": 60189,
+      "go_seq": 60959,
+      "end_seq": 63730,
+      "target_steps": 40,
+      "steps": 42,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 6,
+      "kind": "transition",
+      "label": "to_chair",
+      "start_seq": 64119,
+      "go_seq": null,
+      "end_seq": 65109,
+      "target_steps": null,
+      "steps": null,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 7,
+      "kind": "hold",
+      "label": "leg_swing_seated",
+      "start_seq": 65449,
+      "go_seq": null,
+      "end_seq": 68459,
+      "target_steps": null,
+      "steps": 0,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 8,
+      "kind": "hold",
+      "label": "foot_tap_seated",
+      "start_seq": 68699,
+      "go_seq": null,
+      "end_seq": 71699,
+      "target_steps": null,
+      "steps": 0,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 9,
+      "kind": "hold",
+      "label": "sit_still",
+      "start_seq": 71919,
+      "go_seq": null,
+      "end_seq": 72929,
+      "target_steps": null,
+      "steps": 0,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 10,
+      "kind": "transition",
+      "label": "stand_up",
+      "start_seq": 73139,
+      "go_seq": null,
+      "end_seq": 73939,
+      "target_steps": null,
+      "steps": null,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 11,
+      "kind": "bout",
+      "label": "walk_slow",
+      "start_seq": 73939,
+      "go_seq": 74679,
+      "end_seq": 76920,
+      "target_steps": 30,
+      "steps": 30,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 12,
+      "kind": "hold",
+      "label": "stand",
+      "start_seq": 77259,
+      "go_seq": null,
+      "end_seq": 78269,
+      "target_steps": null,
+      "steps": 0,
+      "ok": true,
+      "timed_out": false
+    }
+  ]
+}

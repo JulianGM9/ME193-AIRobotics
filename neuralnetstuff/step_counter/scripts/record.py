@@ -158,9 +158,13 @@ def run_bout(stream, step, bias, voice):
 
 
 def run_timed(stream, step, voice):
+    # A counted block starts with its instruction, like a bout: in S008 the pottering began
+    # while the instruction was still playing, and those steps (which Julian counted) fell
+    # outside the block. Holds and transitions still start at the beep.
+    instruction_start = latest(stream)
     voice.say(step.say)
     voice.beep()
-    start = latest(stream)
+    start = instruction_start if step.kind == "counted" else latest(stream)
     for remaining in range(int(step.seconds), 0, -1):
         if remaining == 5 and step.seconds >= 15:
             voice.say("5 seconds.", wait=False)
@@ -291,6 +295,7 @@ def main():
         "orientation_change_deg": None if change is None else round(change, 2),
         "hallway_m": args.hallway_m,
         "lag_samples": LAG_SAMPLES,
+        "counted_start": "instruction",  # counted blocks begin with their instruction (scripts/add_go_seq.py)
         "samples": int(len(samples)),
         "missing": int(len(missing)),
         "segments": segments,
