@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from stepnet import calibration as cal
 from stepnet.io.live import LiveStream
 from stepnet.io.session import RAW_DIR, missing_seqs, next_session_id, read_session, write_session
-from stepnet.motion import is_moving, is_still
+from stepnet.motion import MOVING_DPS, gyro_magnitude_dps, is_still
 from stepnet.preprocess import AXIS_MAP, to_body, to_physical
 from stepnet.protocols import BOUT_TIMEOUT_S, steps_for
 
@@ -35,6 +35,7 @@ from stepnet.protocols import BOUT_TIMEOUT_S, steps_for
 LAG_SAMPLES = 30
 STILL_WINDOW = 150  # 1.5 s of stillness ends a bout
 END_MARGIN = 50  # keep 0.5 s of the stillness inside the bout
+MIN_ACTIVE = 100  # a bout lasts at least 1 s of movement before stillness can end it
 NUDGE_AFTER_S = 10.0
 
 HALLWAY_M = 4.88  # 16 ft, measured by Julian 2026-11-02 (for distance estimation, M11)
@@ -124,20 +125,30 @@ def run_bout(stream, step, bias, voice):
     voice.say(step.say)
     voice.beep()
     voice.say("Go.", wait=False)
+    # Only movement after "Go" starts the bout. Otherwise walking that was still going on
+    # during the instruction (e.g. still on the way to the stairs) counted as the bout, and
+    # pausing at the bottom of the stairs then ended it before the climb (2026-11-02).
+    go_seq = latest(stream)
     t0 = time.monotonic()
-    moved = nudged = False
+    moved_seq = None  # first sample after "Go" with the leg clearly moving
+    nudged = False
     while True:
         time.sleep(0.2)
-        recent = stream.since(stream.latest_seq() - STILL_WINDOW + 1)
-        if not moved:
-            moved = is_moving(recent, bias)
-            if not moved and not nudged and time.monotonic() - t0 > NUDGE_AFTER_S:
+        if moved_seq is None:
+            after_go = stream.since(go_seq)
+            moving = np.nonzero(gyro_magnitude_dps(after_go, bias) > MOVING_DPS)[0] if len(after_go) else []
+            if len(moving):
+                moved_seq = int(after_go[moving[0], 0])
+            elif not nudged and time.monotonic() - t0 > NUDGE_AFTER_S:
                 voice.say("Start whenever you are ready.", wait=False)
                 nudged = True
-        elif len(recent) >= STILL_WINDOW * 0.9 and is_still(recent, bias):
-            end = int(recent[0, 0]) + END_MARGIN
-            timed_out = False
-            break
+        else:
+            recent = stream.since(stream.latest_seq() - STILL_WINDOW + 1)
+            if (len(recent) >= STILL_WINDOW * 0.9 and recent[0, 0] >= moved_seq + MIN_ACTIVE
+                    and is_still(recent, bias)):
+                end = int(recent[0, 0]) + END_MARGIN
+                timed_out = False
+                break
         if time.monotonic() - t0 > BOUT_TIMEOUT_S:
             end, timed_out = latest(stream), True
             break
