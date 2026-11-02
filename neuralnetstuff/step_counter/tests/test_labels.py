@@ -114,3 +114,18 @@ def test_counted_blocks_are_checked_like_bouts(tmp_path):
     strides = [1550 + 100 * k for k in range(5)]
     assert lab.check_segments(meta, strides)[0]["status"] == "pass"
     assert lab.check_segments(meta, strides[:3])[0]["status"] == "fail"
+
+
+def test_omega_candidates_find_turning_steps_only_in_counted_blocks(tmp_path):
+    samples, meta = synthetic_session(tmp_path)
+    t = np.arange(len(samples)) / 100
+    # three turning steps at 15.5, 16.5, 17.5 s: S-axis (sensor -x) twists, no L dip at all
+    for c in (15.5, 16.5, 17.5):
+        samples[:, 5] += np.round(-300 * np.exp(-((t - c) / 0.08) ** 2) * GYRO_LSB).astype(np.int64)
+    meta["segments"][2].update(kind="counted", label="turn_in_place", steps=6)  # 2400-2900 = 14-19 s
+    cands = lab.find_candidates(samples, meta)
+    turning = [c for c in cands if 2400 <= c < 2900]
+    assert [round((c - 1000) / 100, 1) for c in turning] == [15.5, 16.5, 17.5]
+    # the same twists in a no-step block are not proposed: only counted blocks get |omega| candidates
+    meta["segments"][2].update(kind="hold", steps=0)
+    assert not [c for c in lab.find_candidates(samples, meta) if 2400 <= c < 2900]

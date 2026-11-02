@@ -1,7 +1,11 @@
 """Stride labels: candidate detection, the bout count check, and versioned label files (PLAN.md D6, D7, D18).
 
-What we label: one event per right-foot stride, at the mid-swing minimum of the L-axis
-(sagittal) gyro. On this mount it dips to about -150..-300 deg/s once per stride.
+What we label: one event per right-foot stride.
+  - forward steps: at the mid-swing minimum of the L-axis (sagittal) gyro, which dips to about
+    -150..-300 deg/s once per stride on this mount
+  - turning, side and backward steps (protocol C): at the peak of the total angular speed
+    |omega|. These steps barely swing the shin forward, so they make no L dip (found in S008:
+    the S/F-axis bursts matched Julian's counts exactly).
 
   data/labels/<session>/v001.json, v002.json, ...   (a new version on every save, never edited)
 
@@ -29,6 +33,10 @@ CHECKED_KINDS = ("bout", "hold", "counted")  # blocks with a step count to check
 # the extras. Labels must never be raw detector output, or a model trained on them could only
 # learn to copy this detector (D7).
 CANDIDATE_PARAMS = {"height_dps": 60.0, "prominence_dps": 40.0, "min_gap_s": 0.35}
+# |omega| peaks, proposed only inside counted blocks (where non-forward steps happen), and only
+# where no L-dip candidate is within OMEGA_DEDUPE_S (that would be the same step).
+OMEGA_PARAMS = {"cutoff_hz": 6.0, "height_dps": 80.0, "prominence_dps": 50.0, "min_gap_s": 0.35}
+OMEGA_DEDUPE_S = 0.2
 
 
 def body_signals(samples, meta):
@@ -38,11 +46,33 @@ def body_signals(samples, meta):
 
 
 def find_candidates(samples, meta, params=CANDIDATE_PARAMS) -> list[int]:
-    """seq numbers of candidate strides: local minima of the L-axis gyro."""
+    """seq numbers of candidate strides: L-gyro minima everywhere, plus |omega| peaks in counted blocks."""
     _, gyr = body_signals(samples, meta)
     idx, _ = find_peaks(-gyr[:, 2], height=params["height_dps"], prominence=params["prominence_dps"],
                         distance=max(1, int(params["min_gap_s"] * 100)))
-    return [int(s) for s in samples[idx, 0]]
+    l_cands = samples[idx, 0]
+    omega = find_omega_candidates(samples, meta, gyr)
+    if len(l_cands):
+        omega = [q for q in omega if np.abs(l_cands - q).min() > OMEGA_DEDUPE_S * 100]
+    return sorted(int(s) for s in list(l_cands) + list(omega))
+
+
+def find_omega_candidates(samples, meta, gyr=None, params=OMEGA_PARAMS) -> list[int]:
+    """|omega| peaks inside counted blocks: candidates for turning, side and backward steps."""
+    from stepnet.baselines import lowpass  # (imported here: baselines imports nothing from labels)
+
+    if gyr is None:
+        _, gyr = body_signals(samples, meta)
+    omega = lowpass(np.linalg.norm(gyr, axis=1), params["cutoff_hz"])
+    idx, _ = find_peaks(omega, height=params["height_dps"], prominence=params["prominence_dps"],
+                        distance=max(1, int(params["min_gap_s"] * 100)))
+    seqs = samples[idx, 0]
+    keep = np.zeros(len(seqs), dtype=bool)
+    for seg in meta["segments"]:
+        if seg["kind"] == "counted":
+            first, last = counted_range(seg)
+            keep |= (seqs >= first) & (seqs < last)
+    return [int(s) for s in seqs[keep]]
 
 
 def counted_range(seg) -> tuple[int, int]:
@@ -86,7 +116,8 @@ def load_latest_labels(session, labels_dir=LABELS_DIR):
     return json.loads(versions[-1].read_text()) if versions else None
 
 
-def save_labels(session, meta, strides, segment_ok=None, labeler="julian", labels_dir=LABELS_DIR) -> dict:
+def save_labels(session, meta, strides, segment_ok=None, labeler="julian", labels_dir=LABELS_DIR,
+                candidates=None) -> dict:
     """Write the next version. Raises ValueError (with the failing checks) unless every check passes."""
     checks = check_segments(meta, strides, segment_ok)
     if not all_pass(checks):
@@ -102,6 +133,9 @@ def save_labels(session, meta, strides, segment_ok=None, labeler="julian", label
         "event": EVENT,
         "candidate_params": CANDIDATE_PARAMS,
         "strides": sorted(int(s) for s in strides),
+        # what the labeler showed: on reload, only these can count as "rejected"; a candidate
+        # that wasn't shown (new detector, moved block) comes back as undecided
+        "candidates": None if candidates is None else sorted(int(c) for c in candidates),
         "segment_ok": {str(k): bool(v) for k, v in (segment_ok or {}).items()},
         "checks": checks,
     }

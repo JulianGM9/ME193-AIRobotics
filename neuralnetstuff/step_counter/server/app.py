@@ -66,14 +66,16 @@ def create_app(raw_dir=RAW_DIR, labels_dir=lab.LABELS_DIR, web_dir=WEB_DIR) -> F
             "missing": int(len(missing_seqs(samples))),
             "candidates": lab.find_candidates(samples, meta),
             "candidate_params": lab.CANDIDATE_PARAMS,
+            "omega_params": lab.OMEGA_PARAMS,
             "labels": lab.load_latest_labels(session, labels_dir),
         }
 
     @app.post("/api/sessions/{session}/labels")
     def save(session: str, body: LabelsIn):
-        _, meta = load(session)
+        samples, meta = load(session)
         try:
-            return lab.save_labels(session, meta, body.strides, body.segment_ok, labels_dir=labels_dir)
+            return lab.save_labels(session, meta, body.strides, body.segment_ok, labels_dir=labels_dir,
+                                   candidates=lab.find_candidates(samples, meta))
         except ValueError as exc:
             raise HTTPException(422, str(exc))
 

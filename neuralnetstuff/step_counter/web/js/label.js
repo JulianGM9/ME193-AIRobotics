@@ -43,15 +43,37 @@ function idxOf(seq) {
 const tOf = (seq) => (seq - state.data.seq[0]) / RATE;
 const gyroL = () => state.data.gyr[2];
 
-function snap(seq) {
-  // the most negative L-gyro sample within +/- SNAP_WINDOW: the mid-swing minimum
-  const g = gyroL();
+function extremeNear(seq, values, sign) {
+  // index of the most extreme sample (sign -1: minimum, +1: maximum) within +/- SNAP_WINDOW
   const c = idxOf(seq);
   let best = c;
-  for (let i = Math.max(0, c - SNAP_WINDOW); i <= Math.min(g.length - 1, c + SNAP_WINDOW); i++) {
-    if (g[i] < g[best]) best = i;
+  for (let i = Math.max(0, c - SNAP_WINDOW); i <= Math.min(values.length - 1, c + SNAP_WINDOW); i++) {
+    if (sign * values[i] > sign * values[best]) best = i;
   }
-  return state.data.seq[best];
+  return best;
+}
+
+function snap(seq) {
+  // forward step: the mid-swing minimum of the L gyro
+  return state.data.seq[extremeNear(seq, gyroL(), -1)];
+}
+
+function snapOmega(seq) {
+  // turning / side / backward step: the peak of the total angular speed |omega|
+  return state.data.seq[extremeNear(seq, state.omega, 1)];
+}
+
+function snapAuto(seq) {
+  // a forward step's L dip carries most of its |omega|; a turn or side step's doesn't
+  const iL = extremeNear(seq, gyroL(), -1);
+  const iW = extremeNear(seq, state.omega, 1);
+  return state.data.seq[-gyroL()[iL] >= 0.7 * state.omega[iW] ? iL : iW];
+}
+
+function markerValue(seq) {
+  // where to draw an event: on the L dip for forward steps, on the |omega| peak otherwise
+  const i = idxOf(seq);
+  return -gyroL()[i] >= 0.5 * state.omega[i] ? gyroL()[i] : state.omega[i];
 }
 
 // The part of a block whose strides count: a bout from "Go" (moving into position while the
@@ -137,15 +159,25 @@ async function openSession(id) {
   Object.assign(state, { id, data, selected: -1, dirty: false, segmentOk: {} });
   history.replaceState(null, "", `#${id}`);
   state.t = data.seq.map(tOf);
+  state.omega = data.gyr[0].map((s, i) => Math.hypot(s, data.gyr[1][i], data.gyr[2][i]));
 
   if (data.labels) {
-    // Saved strides are accepted; candidates that don't match one were rejected last time.
+    // Saved strides are accepted. A candidate that doesn't match one was rejected last time,
+    // unless it wasn't shown then: new detector, block moved, or the block was excluded.
     const saved = data.labels.strides;
+    for (const [k, v] of Object.entries(data.labels.segment_ok || {})) state.segmentOk[k] = v;
+    const near = (list, c) => list.some((s) => Math.abs(s - c) <= MATCH_SAMPLES);
+    const reviewed = (c) => {
+      if (data.labels.candidates) return near(data.labels.candidates, c);
+      // older label files didn't store their candidates
+      return !data.meta.segments.some((seg) =>
+        (state.segmentOk[seg.i] === false && c >= seg.start_seq && c < seg.end_seq) ||
+        (seg.start_seq_at_beep && c >= seg.start_seq && c < seg.start_seq_at_beep));
+    };
     state.events = saved.map((seq) => ({ seq, status: "accepted" }));
     for (const c of data.candidates) {
-      if (!saved.some((s) => Math.abs(s - c) <= MATCH_SAMPLES)) state.events.push({ seq: c, status: "rejected" });
+      if (!near(saved, c)) state.events.push({ seq: c, status: reviewed(c) ? "rejected" : "proposed" });
     }
-    for (const [k, v] of Object.entries(data.labels.segment_ok || {})) state.segmentOk[k] = v;
   } else {
     state.events = data.candidates.map((seq) => ({ seq, status: "proposed" }));
   }
@@ -173,11 +205,11 @@ function render(main) {
       <span class="save-msg" id="save-msg"></span>
       <button class="primary" id="save">Save labels</button>
     </div>
-    <div class="chart"><div class="chart-title">L-axis gyro (sagittal, deg/s), the labeling channel. Time in seconds. Drag to zoom, double-click to reset</div><div id="c-main"></div></div>
+    <div class="chart"><div class="chart-title">L-axis gyro (sagittal) and |ω| total angular speed (deg/s): the labeling channels. Time in seconds. Drag to zoom, double-click to reset</div><div id="c-main"></div></div>
     <div class="help">
       Click a marker to select it ·
       <kbd>a</kbd>/<kbd>Enter</kbd> accept · <kbd>r</kbd>/<kbd>⌫</kbd> reject · <kbd>←</kbd><kbd>→</kbd> nudge (<kbd>⇧</kbd> ×10) ·
-      <kbd>s</kbd> snap to minimum · <kbd>n</kbd>/<kbd>⇧n</kbd> next/previous undecided · <kbd>z</kbd> zoom to it ·
+      <kbd>s</kbd> snap to L minimum (forward step) · <kbd>w</kbd> snap to |ω| peak (turn, side or back step) · <kbd>n</kbd>/<kbd>⇧n</kbd> next/previous undecided · <kbd>z</kbd> zoom to it ·
       <kbd>⌥</kbd>-click add a stride
       <span class="marker-key"><span>▲ accepted</span><span>○ undecided</span><span>× rejected</span>
         <span>dim ○ outside the counted part of a block (optional)</span>
@@ -220,9 +252,10 @@ function buildCharts() {
 
   const main = new uPlot({
     ...common(320),
-    series: [{ label: "t (s)", value: fmt(2) }, { label: "L gyro", stroke: colors[2], width: 1.25, value: fmt(1) }],
+    series: [{ label: "t (s)", value: fmt(2) }, { label: "L gyro", stroke: colors[2], width: 1.25, value: fmt(1) },
+      { label: "|ω|", stroke: css("--series-W"), width: 1, value: fmt(1) }],
     hooks: { drawClear: [drawBands], draw: [drawSegmentLabels, drawMarkers], setScale: [syncX] },
-  }, [state.t, d.gyr[2]], document.getElementById("c-main"));
+  }, [state.t, d.gyr[2], state.omega], document.getElementById("c-main"));
 
   const axes3 = (unit, dp) => ["S", "F", "L"].map((a, i) => ({ label: `${a} ${unit}`, stroke: colors[i], width: 1, value: fmt(dp) }));
   const gyr = new uPlot({
@@ -312,7 +345,6 @@ function drawSegmentLabels(u) {
 function drawMarkers(u) {
   const { ctx } = u;
   const r = uPlot.pxRatio;
-  const g = gyroL();
   const [xmin, xmax] = [u.scales.x.min, u.scales.x.max];
   ctx.save();
   ctx.beginPath();
@@ -322,7 +354,7 @@ function drawMarkers(u) {
     const t = tOf(e.seq);
     if (t < xmin || t > xmax) return;
     const x = u.valToPos(t, "x", true);
-    const y = u.valToPos(g[idxOf(e.seq)], "y", true);
+    const y = u.valToPos(markerValue(e.seq), "y", true);
     ctx.lineWidth = 1.5 * r;
     if (e.status === "accepted") {
       // filled triangle just under the dip, pointing up at it
@@ -455,7 +487,7 @@ function attachMouse(u) {
     if (down && Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 3) return; // that was a zoom drag
     const t = u.posToVal(e.offsetX, "x");
     if (e.altKey) {
-      const seq = snap(state.data.seq[0] + Math.round(t * RATE));
+      const seq = snapAuto(state.data.seq[0] + Math.round(t * RATE));
       if (!state.events.some((ev) => ev.seq === seq)) {
         state.events.push({ seq, status: "accepted" });
         state.selected = state.events.length - 1;
@@ -507,8 +539,8 @@ function onKey(e) {
     ev.seq += (key === "ArrowLeft" ? -1 : 1) * (e.shiftKey ? 10 : 1);
     sortEvents();
     changed();
-  } else if (key === "s") {
-    ev.seq = snap(ev.seq);
+  } else if (key === "s" || key === "w") {
+    ev.seq = key === "s" ? snap(ev.seq) : snapOmega(ev.seq);
     sortEvents();
     changed();
   } else if (key === "z") {
