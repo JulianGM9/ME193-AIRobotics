@@ -19,18 +19,26 @@ def masked_bce(logits, target, mask, pos_weight):
     return loss / mask.sum().clamp(min=1)
 
 
+def pick_device(name="auto"):
+    if name == "auto":
+        return "mps" if torch.backends.mps.is_available() else "cpu"
+    return name
+
+
 def train_model(sessions, cfg, log=None):
-    """Train a StepCNN on the given SessionData list. Returns (model, (mean, std))."""
+    """Train a StepCNN on the given SessionData list. Returns (model on the CPU, (mean, std))."""
+    device = pick_device(cfg.train.device)
     torch.manual_seed(cfg.train.seed)
     mean, std = channel_stats(sessions)
     data = WindowDataset(sessions, cfg.data, mean, std, augment=True, seed=cfg.train.seed)
     loader = torch.utils.data.DataLoader(data, batch_size=cfg.train.batch)
-    model = StepCNN.from_config(cfg.model)
+    model = StepCNN.from_config(cfg.model).to(device)
     opt = torch.optim.Adam(model.parameters(), lr=cfg.train.lr, weight_decay=cfg.train.weight_decay)
     for epoch in range(cfg.train.epochs):
         model.train()
         total, n = 0.0, 0
         for x, target, mask in loader:
+            x, target, mask = x.to(device), target.to(device), mask.to(device)
             loss = masked_bce(model(x), target, mask, cfg.train.pos_weight)
             opt.zero_grad()
             loss.backward()  # autograd: d(loss)/d(every weight), through all 6 conv layers
@@ -38,7 +46,7 @@ def train_model(sessions, cfg, log=None):
             total, n = total + loss.item() * len(x), n + len(x)
         if log:
             log(epoch=epoch + 1, loss=total / n)
-    return model, (mean, std)
+    return model.cpu(), (mean, std)
 
 
 @torch.no_grad()

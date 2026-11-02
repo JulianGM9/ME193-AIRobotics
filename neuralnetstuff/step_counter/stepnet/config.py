@@ -35,6 +35,7 @@ class TrainConfig:
     weight_decay: float = 1e-4
     pos_weight: float = 20.0  # BCE weight is 1 + pos_weight * target: strides are rare
     seed: int = 0
+    device: str = "auto"  # "auto" = Apple GPU (mps) if available, else cpu; ~9x faster on this Mac
 
 
 @dataclass

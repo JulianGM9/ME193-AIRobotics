@@ -4,6 +4,7 @@
   GET  /api/sessions/{id}             signals (body frame), segments, candidates, latest labels
   POST /api/sessions/{id}/labels      {"strides": [seq...], "segment_ok": {"3": false}}
                                       -> saves the next label version, or 422 if a count check fails
+  WS   /ws/live                       live view feed (server/live.py)
 
 Run it with scripts/serve.py.
 """
@@ -11,12 +12,14 @@ import re
 from pathlib import Path
 
 import numpy as np
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from stepnet import labels as lab
+from server.live import live_socket
 from stepnet.io.session import RAW_DIR, missing_seqs, read_session
+from stepnet.uncertainty.ensemble import MODEL_DIR, load_ensemble
 
 WEB_DIR = Path(__file__).resolve().parents[1] / "web"
 
@@ -78,6 +81,14 @@ def create_app(raw_dir=RAW_DIR, labels_dir=lab.LABELS_DIR, web_dir=WEB_DIR) -> F
                                    candidates=lab.find_candidates(samples, meta))
         except ValueError as exc:
             raise HTTPException(422, str(exc))
+
+    ensemble = {}
+
+    @app.websocket("/ws/live")
+    async def live(ws: WebSocket):
+        if "members" not in ensemble and (MODEL_DIR / "calibration.json").exists():
+            ensemble["members"] = load_ensemble()
+        await live_socket(ws, ensemble.get("members"))
 
     app.mount("/", StaticFiles(directory=web_dir, html=True), name="web")
     return app

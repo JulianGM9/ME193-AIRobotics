@@ -1,0 +1,73 @@
+{
+  "q": {
+    "0.5": 0.6744897501960817,
+    "0.8": 1.2815515655446004,
+    "0.9": 1.644853626951472,
+    "0.95": 1.959963984540054
+  },
+  "sigma_delta2": 0.05405405405405406,
+  "threshold": 0.5,
+  "min_gap_s": 0.3,
+  "members": 5,
+  "trained_on": [
+    "S001",
+    "S002",
+    "S003",
+    "S004",
+    "S005",
+    "S006",
+    "S007",
+    "S008"
+  ],
+  "dataset": "006899f3fae0",
+  "run": "20261102_182847_cnn_ensemble",
+  "config": {
+    "name": "cnn",
+    "data": {
+      "window": 256,
+      "target_sigma": 5.0,
+      "windows_per_epoch": 3000,
+      "rotate_deg": 10.0,
+      "scale": 0.1
+    },
+    "model": {
+      "channels": [
+        16,
+        32,
+        32,
+        32,
+        32
+      ],
+      "dilations": [
+        1,
+        2,
+        4,
+        8,
+        16
+      ],
+      "kernel": 7,
+      "dropout": 0.1
+    },
+    "train": {
+      "epochs": 30,
+      "batch": 64,
+      "lr": 0.001,
+      "weight_decay": 0.0001,
+      "pos_weight": 20.0,
+      "seed": 4,
+      "device": "auto"
+    },
+    "detect": {
+      "threshold": 0.5,
+      "min_gap_s": 0.3,
+      "hop": 64
+    }
+  },
+  "created_at": "2026-11-02 18:30:12",
+  "q_conformal": {
+    "0.5": 0.0,
+    "0.8": 0.0,
+    "0.9": 0.0,
+    "0.95": 0.551423431120272
+  }
+}

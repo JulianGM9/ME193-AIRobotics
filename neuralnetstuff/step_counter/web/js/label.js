@@ -126,9 +126,12 @@ export async function mountLabel(root) {
       <aside class="session-list"><h2>Sessions</h2><div id="sessions"></div></aside>
       <section class="label-main" id="label-main"><div class="empty">Loading…</div></section>
     </div>`;
-  window.addEventListener("keydown", onKey);
-  window.addEventListener("resize", resizeCharts);
-  window.addEventListener("beforeunload", (e) => { if (state.dirty) e.preventDefault(); });
+  if (!state.listening) { // the view can be mounted again after switching tabs: register once
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("resize", resizeCharts);
+    window.addEventListener("beforeunload", (e) => { if (state.dirty) e.preventDefault(); });
+    state.listening = true;
+  }
   await refreshSessions();
   // #S005 in the URL opens that session (and reloading keeps you on it)
   const linked = state.sessions.find((s) => s.session === location.hash.slice(1));

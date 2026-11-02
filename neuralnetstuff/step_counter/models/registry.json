@@ -1,0 +1,10 @@
+{
+  "cnn_ensemble_v1": {
+    "path": "models/cnn_ensemble_v1",
+    "kind": "ensemble",
+    "members": 5,
+    "dataset": "006899f3fae0",
+    "run": "20261102_182847_cnn_ensemble",
+    "created_at": "2026-11-02 18:30:12"
+  }
+}

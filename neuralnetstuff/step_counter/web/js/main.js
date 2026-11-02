@@ -1,8 +1,9 @@
-// App shell: one view at a time. Only the Label view exists so far (M3); the other tabs
-// are placeholders for later milestones (PLAN.md D17).
+// App shell: one view at a time. Label (M3) and Live (M7); Datasets, Train and Models were
+// cut for the deadline (PLAN.md), so their tabs stay disabled.
 import { mountLabel } from "./label.js";
+import { mountLive } from "./live.js";
 
-const VIEWS = { label: mountLabel };
+const VIEWS = { label: mountLabel, live: mountLive };
 
 function show(name) {
   for (const b of document.querySelectorAll("#tabs button")) b.classList.toggle("active", b.dataset.view === name);
@@ -16,4 +17,5 @@ document.getElementById("tabs").addEventListener("click", (e) => {
   if (name && VIEWS[name]) show(name);
 });
 
-show("label");
+// #live or #live=S005 (replay S005 straight away) opens the Live view; anything else Label
+show(location.hash.startsWith("#live") ? "live" : "label");
