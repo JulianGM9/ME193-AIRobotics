@@ -1,0 +1,124 @@
+{
+  "session": "S002",
+  "version": 1,
+  "created_at": "2026-11-02 15:46:00",
+  "labeler": "julian",
+  "event": "mid_swing_L_gyro_min",
+  "candidate_params": {
+    "height_dps": 60.0,
+    "prominence_dps": 40.0,
+    "min_gap_s": 0.35
+  },
+  "strides": [
+    261482,
+    261616,
+    261736,
+    261848,
+    261959,
+    262071,
+    262182,
+    262285,
+    262394,
+    262501,
+    262607,
+    262714,
+    262823,
+    262938,
+    263053,
+    263164,
+    263274,
+    263386,
+    263497,
+    263612,
+    275057,
+    275201,
+    275328,
+    275475,
+    275626,
+    275774,
+    275916,
+    276065,
+    276209,
+    276348,
+    276490,
+    276628,
+    276769,
+    276908,
+    277054
+  ],
+  "segment_ok": {},
+  "checks": [
+    {
+      "i": 3,
+      "label": "stand",
+      "kind": "hold",
+      "steps": 0,
+      "strides": 0,
+      "ok": true,
+      "status": "pass"
+    },
+    {
+      "i": 4,
+      "label": "fidget_standing",
+      "kind": "hold",
+      "steps": 0,
+      "strides": 0,
+      "ok": true,
+      "status": "pass"
+    },
+    {
+      "i": 5,
+      "label": "walk_normal",
+      "kind": "bout",
+      "steps": 40,
+      "strides": 20,
+      "ok": true,
+      "status": "pass"
+    },
+    {
+      "i": 7,
+      "label": "leg_swing_seated",
+      "kind": "hold",
+      "steps": 0,
+      "strides": 0,
+      "ok": true,
+      "status": "pass"
+    },
+    {
+      "i": 8,
+      "label": "foot_tap_seated",
+      "kind": "hold",
+      "steps": 0,
+      "strides": 0,
+      "ok": true,
+      "status": "pass"
+    },
+    {
+      "i": 9,
+      "label": "sit_still",
+      "kind": "hold",
+      "steps": 0,
+      "strides": 0,
+      "ok": true,
+      "status": "pass"
+    },
+    {
+      "i": 11,
+      "label": "walk_slow",
+      "kind": "bout",
+      "steps": 30,
+      "strides": 15,
+      "ok": true,
+      "status": "pass"
+    },
+    {
+      "i": 12,
+      "label": "stand",
+      "kind": "hold",
+      "steps": 0,
+      "strides": 0,
+      "ok": true,
+      "status": "pass"
+    }
+  ]
+}
