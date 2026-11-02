@@ -1,0 +1,12 @@
+# Laptop side. Install into the repo-root venv:
+#   ../../.venv/bin/pip install -r requirements.txt
+torch>=2.4
+numpy
+scipy
+matplotlib
+pyyaml
+paho-mqtt>=2.0
+fastapi
+uvicorn[standard]
+pytest
+httpx

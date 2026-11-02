@@ -1,0 +1,49 @@
+{
+  "session": "T001",
+  "version": 1,
+  "created_at": "2026-11-02 14:47:23",
+  "labeler": "julian",
+  "event": "mid_swing_L_gyro_min",
+  "candidate_params": {
+    "height_dps": 60.0,
+    "prominence_dps": 40.0,
+    "min_gap_s": 0.35
+  },
+  "strides": [
+    43698,
+    43837,
+    43967,
+    44092,
+    44221
+  ],
+  "segment_ok": {},
+  "checks": [
+    {
+      "i": 3,
+      "label": "walk_normal",
+      "kind": "bout",
+      "steps": 10,
+      "strides": 5,
+      "ok": true,
+      "status": "pass"
+    },
+    {
+      "i": 4,
+      "label": "fidget_standing",
+      "kind": "hold",
+      "steps": 0,
+      "strides": 0,
+      "ok": true,
+      "status": "pass"
+    },
+    {
+      "i": 5,
+      "label": "stand",
+      "kind": "hold",
+      "steps": 0,
+      "strides": 0,
+      "ok": true,
+      "status": "pass"
+    }
+  ]
+}

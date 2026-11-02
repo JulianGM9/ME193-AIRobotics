@@ -1,0 +1,93 @@
+/* Dark "instrument panel" theme (PLAN.md D17). Colors from the dataviz reference palette
+   (dark steps): series slots 1-3 for the S/F/L axes, the fixed status palette for checks. */
+:root {
+  color-scheme: dark;
+  --bg: #121211;
+  --surface-1: #1a1a19;
+  --surface-2: #232321;
+  --border: #33332f;
+  --text-primary: #f0efec;
+  --text-secondary: #c3c2b7;
+  --text-muted: #8f8e86;
+  --series-S: #3987e5;
+  --series-F: #d95926;
+  --series-L: #199e70;
+  --good: #0ca30c;
+  --critical: #d03b3b;
+  --band-bout: rgba(240, 239, 236, 0.07);
+  --band-hold: rgba(240, 239, 236, 0.035);
+  --band-excluded: rgba(208, 59, 59, 0.10);
+  --mono: ui-monospace, "SF Mono", Menlo, monospace;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text-primary);
+  font: 14px/1.4 -apple-system, system-ui, sans-serif;
+}
+button {
+  font: inherit;
+  color: var(--text-primary);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+button:hover:not(:disabled) { border-color: var(--text-muted); }
+button:disabled { color: var(--text-muted); cursor: default; opacity: 0.6; }
+button.primary { background: var(--text-primary); color: var(--bg); border-color: var(--text-primary); }
+
+.topbar {
+  display: flex; align-items: center; gap: 24px;
+  padding: 10px 16px; border-bottom: 1px solid var(--border); background: var(--surface-1);
+}
+.brand { font-weight: 600; letter-spacing: 0.02em; }
+.tabs { display: flex; gap: 4px; flex-wrap: wrap; }
+.tabs button { background: transparent; border-color: transparent; }
+.tabs button.active { background: var(--surface-2); border-color: var(--border); }
+
+/* ---- Label view ---- */
+.label-view { display: grid; grid-template-columns: 220px minmax(0, 1fr); min-height: calc(100vh - 49px); }
+.session-list { border-right: 1px solid var(--border); padding: 8px; overflow-y: auto; }
+.session-list h2, .panel h2 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em;
+  color: var(--text-muted); margin: 8px 4px; font-weight: 600; }
+.session-item { display: block; width: 100%; text-align: left; margin-bottom: 4px; background: transparent; }
+.session-item.active { background: var(--surface-2); border-color: var(--text-muted); }
+.session-item .sub { color: var(--text-muted); font-size: 12px; }
+
+.label-main { padding: 12px 16px; min-width: 0; }
+.label-header { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; margin-bottom: 8px; }
+.label-header .title { font-size: 16px; font-weight: 600; }
+.label-header .info { color: var(--text-secondary); }
+.label-header .spacer { flex: 1; }
+.save-msg { font-size: 13px; }
+
+.chart { background: var(--surface-1); border: 1px solid var(--border); border-radius: 8px;
+  margin-bottom: 8px; padding: 4px 0 0; }
+.chart .u-legend { color: var(--text-secondary); font-size: 12px; }
+.chart .u-select { background: rgba(240, 239, 236, 0.08); }
+.chart-title { color: var(--text-muted); font-size: 12px; padding: 2px 10px; }
+
+.help { color: var(--text-muted); font-size: 12px; margin: 4px 0 12px; }
+.help kbd { font-family: var(--mono); background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: 4px; padding: 0 4px; color: var(--text-secondary); }
+.marker-key { display: inline-flex; gap: 14px; margin-left: 8px; }
+
+table.segments { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.segments th { text-align: left; color: var(--text-muted); font-weight: 500; padding: 4px 8px;
+  border-bottom: 1px solid var(--border); }
+table.segments td { padding: 4px 8px; border-bottom: 1px solid var(--surface-2); font-variant-numeric: tabular-nums; }
+table.segments tr.excluded td { color: var(--text-muted); }
+.status { white-space: nowrap; }
+.status.pass { color: var(--good); }
+.status.fail { color: var(--critical); }
+.status.undecided, .status.no-count { color: var(--text-secondary); }
+.empty { color: var(--text-muted); padding: 40px; text-align: center; }
+
+@media (max-width: 720px) {
+  .label-view { grid-template-columns: 1fr; }
+  .session-list { border-right: 0; border-bottom: 1px solid var(--border); max-height: 160px; }
+}

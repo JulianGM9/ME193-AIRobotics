@@ -1,0 +1,130 @@
+{
+  "session": "T001",
+  "protocol": "test",
+  "person": "julian",
+  "ankle": "right",
+  "mount_notes": "UNO Q + MPU-6050 on the outside of the right ankle",
+  "notes": "",
+  "recorded_at": "2026-11-02 14:30:34",
+  "board_run": "20261102_192212",
+  "axis_map": {
+    "S": "-x",
+    "F": "-y",
+    "L": "+z"
+  },
+  "accel_calibration": {
+    "offset_g": [
+      0.028826497395833373,
+      -0.005572916666666705,
+      0.18979492187499997
+    ],
+    "scale": [
+      1.0069970703125,
+      1.0061686197916666,
+      1.0287923177083333
+    ],
+    "calibrated_at": "2026-11-02 14:26:44",
+    "pose_means_g": [
+      [
+        -0.9782,
+        -0.0118,
+        0.2142
+      ],
+      [
+        1.0358,
+        0.002,
+        0.181
+      ],
+      [
+        0.0368,
+        -1.0117,
+        0.2039
+      ],
+      [
+        0.0262,
+        1.0006,
+        0.1867
+      ],
+      [
+        0.0405,
+        -0.0081,
+        -0.839
+      ],
+      [
+        0.0575,
+        -0.0028,
+        1.2186
+      ]
+    ],
+    "norm_after_g": [
+      1.0003,
+      1.0001,
+      1.0001,
+      1.0,
+      1.0001,
+      1.0004
+    ]
+  },
+  "gyro_bias_dps": [
+    -7.487,
+    1.265,
+    0.198
+  ],
+  "gravity_body_g": [
+    0.9994,
+    -0.006,
+    0.0569
+  ],
+  "orientation_error_deg": 3.28,
+  "orientation_change_deg": null,
+  "hallway_m": null,
+  "lag_samples": 30,
+  "samples": 8091,
+  "missing": 0,
+  "segments": [
+    {
+      "i": 2,
+      "kind": "transition",
+      "label": "to_start",
+      "start_seq": 41059,
+      "end_seq": 42579,
+      "target_steps": null,
+      "steps": null,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 3,
+      "kind": "bout",
+      "label": "walk_normal",
+      "start_seq": 43349,
+      "end_seq": 44390,
+      "target_steps": 10,
+      "steps": 10,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 4,
+      "kind": "hold",
+      "label": "fidget_standing",
+      "start_seq": 44889,
+      "end_seq": 45899,
+      "target_steps": null,
+      "steps": 0,
+      "ok": true,
+      "timed_out": false
+    },
+    {
+      "i": 5,
+      "kind": "hold",
+      "label": "stand",
+      "start_seq": 46139,
+      "end_seq": 46649,
+      "target_steps": null,
+      "steps": 0,
+      "ok": true,
+      "timed_out": false
+    }
+  ]
+}
