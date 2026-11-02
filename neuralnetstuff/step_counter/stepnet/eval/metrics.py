@@ -43,7 +43,7 @@ def block_rows(blocks, detections) -> list[dict]:
 def summarize(rows) -> dict:
     rows = list(rows)
     tp, fp, fn = (sum(r[k] for r in rows) for k in ("tp", "fp", "fn"))
-    bouts = [r for r in rows if r["kind"] == "bout"]
+    bouts = [r for r in rows if r["kind"] != "hold"]  # bouts and counted blocks: they have steps
     holds = [r for r in rows if r["kind"] == "hold"]
     steps = sum(r["steps"] for r in bouts)
     hold_min = sum(r["seconds"] for r in holds) / 60

@@ -106,3 +106,11 @@ def test_strides_before_go_are_not_counted(tmp_path):
     meta["segments"][1]["go_seq"] = 1500
     bout = lab.check_segments(meta, strides)[0]
     assert (bout["strides"], bout["status"]) == (5, "pass")
+
+
+def test_counted_blocks_are_checked_like_bouts(tmp_path):
+    _, meta = synthetic_session(tmp_path)
+    meta["segments"][1].update(kind="counted", label="potter", go_seq=None)
+    strides = [1550 + 100 * k for k in range(5)]
+    assert lab.check_segments(meta, strides)[0]["status"] == "pass"
+    assert lab.check_segments(meta, strides[:3])[0]["status"] == "fail"

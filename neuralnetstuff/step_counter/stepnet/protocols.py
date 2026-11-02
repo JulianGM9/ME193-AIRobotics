@@ -6,6 +6,9 @@ Step kinds:
               spoken cue and ends automatically once the leg has been still for a moment.
               Ground truth = the step count you confirm after the session.
   hold        a timed block with no steps (standing, fidgeting, leg swings...): truth = 0
+  counted     a timed block of free movement that may include steps (pottering, turning on
+              the spot...): you count every step and confirm the count after the session.
+              Unlike a bout it doesn't end at the first pause, which everyday movement is full of.
   transition  timed time to get into position; never used for training
 
 A step with `optional` set (e.g. "stairs") is only recorded if enabled for the session.
@@ -70,6 +73,26 @@ PROTOCOLS = {
         Step("hold", "sit_still", "Sit still.", seconds=10),
         Step("transition", "stand_up", "Stand up.", seconds=8),
         _walk("walk_slow", 30, "slow"),
+        Step("hold", "stand", "Stand still.", seconds=10),
+    ],
+    # Everyday movement (~4.5 min): the stop-start, turning, gentle steps where fixed
+    # thresholds break (PLAN.md D14, revised after M4). Count EVERY step, both feet.
+    "C": [
+        CALIBRATE,
+        TO_START,
+        Step("counted", "potter", "Potter around as if tidying up: walk a few steps, stop, turn, reach for "
+                                  "things. Count every step.", seconds=30),
+        Step("counted", "turn_in_place", "Turn slowly on the spot, a full circle one way, then the other. "
+                                         "Count every step.", seconds=20),
+        Step("counted", "side_and_back", "Take a few side steps each way, then a few steps backwards. "
+                                         "Count every step.", seconds=20),
+        Step("bout", "walk_very_slow", "Walk 20 steps very slowly, then stop and stand still.", target_steps=20),
+        Step("transition", "to_chair", "Stand in front of a chair.", seconds=8),
+        Step("counted", "sit_to_stand", "Sit down and stand up again, four times. Count any steps you take.",
+             seconds=30),
+        Step("counted", "shuffle_and_tap", "Shuffle a few steps, stop and tap your foot, then shuffle again. "
+                                           "Count every step, not the taps.", seconds=30),
+        _walk("walk_normal", 30, "normal"),
         Step("hold", "stand", "Stand still.", seconds=10),
     ],
     # ~1.5 minute dry run (saved as T###, never trained on)

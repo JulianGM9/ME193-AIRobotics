@@ -76,7 +76,7 @@ def plot(results, data, params):
     fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 4.2), gridspec_kw={"width_ratios": [2.2, 1]})
     for ax, kind, key, ylabel in ((ax1, "bout", "abs_err", "mean |count error| per bout (steps)"),
                                   (ax2, "hold", "fp_per_min", "false strides per minute")):
-        names = [a for a, v in acts["B1"].items() if v["kind"] == kind]
+        names = [a for a, v in acts["B1"].items() if (v["kind"] == "hold") == (kind == "hold")]
         x = np.arange(len(names))
         for j, model in enumerate(("B1", "B2")):
             vals = [acts[model][a][key] for a in names]
@@ -171,7 +171,7 @@ def main():
     a1, a2 = per_activity(results["B1"]), per_activity(results["B2"])
     for act, v in a1.items():
         w = a2[act]
-        lines.append(f"| {act} | {'bout' if v['kind'] == 'bout' else 'no-step'} | {v['blocks']} | {v['abs_err']:.2f} | {w['abs_err']:.2f} | "
+        lines.append(f"| {act} | {'no-step' if v['kind'] == 'hold' else v['kind']} | {v['blocks']} | {v['abs_err']:.2f} | {w['abs_err']:.2f} | "
                      f"{v['fp_per_min']:.1f} | {w['fp_per_min']:.1f} | {v['recall']:.2f} | {w['recall']:.2f} |")
     lines += ["", "## Per session: net count error over all bouts (held-out)", "",
               "| session | counted steps | B1 | B2 | oracle |", "|---|---|---|---|---|"]

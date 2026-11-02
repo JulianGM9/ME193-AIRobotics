@@ -23,6 +23,7 @@ from stepnet.preprocess import to_body, to_physical
 
 LABELS_DIR = Path(__file__).resolve().parents[1] / "data" / "labels"
 EVENT = "mid_swing_L_gyro_min"
+CHECKED_KINDS = ("bout", "hold", "counted")  # blocks with a step count to check against
 
 # Deliberately loose (high recall): it proposes too many candidates and the human rejects
 # the extras. Labels must never be raw detector output, or a model trained on them could only
@@ -55,7 +56,7 @@ def check_segments(meta, strides, segment_ok=None) -> list[dict]:
     segment_ok = {int(k): v for k, v in (segment_ok or {}).items()}
     checks = []
     for seg in meta["segments"]:
-        if seg["kind"] not in ("bout", "hold"):
+        if seg["kind"] not in CHECKED_KINDS:
             continue
         ok = segment_ok.get(seg["i"], seg.get("ok", True))
         first, last = counted_range(seg)

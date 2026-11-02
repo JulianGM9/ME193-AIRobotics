@@ -18,7 +18,7 @@ class Block:
     i: int
     label: str
     activity: str  # label without the repeat suffix, e.g. walk_normal_2 -> walk_normal
-    kind: str  # "bout" or "hold"
+    kind: str  # "bout", "counted" (timed, may contain steps) or "hold" (no steps)
     first: int  # counted range [first, last) in seq
     last: int
     steps: int  # counted steps (both feet)

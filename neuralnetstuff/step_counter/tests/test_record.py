@@ -59,3 +59,16 @@ def test_normal_bout_ends_after_walking_stops(monkeypatch):
     start, go, end, timed_out = run(walking, already_received=300, monkeypatch=monkeypatch)
     assert not timed_out
     assert 900 < end < 1150
+
+
+def test_confirm_counts_asks_for_counted_blocks(monkeypatch):
+    segments = [
+        {"i": 3, "kind": "counted", "label": "potter", "target_steps": None, "steps": None, "ok": True},
+        {"i": 4, "kind": "bout", "label": "walk_very_slow", "target_steps": 20, "steps": None, "ok": True},
+        {"i": 5, "kind": "hold", "label": "stand", "target_steps": None, "steps": 0, "ok": True},
+    ]
+    answers = iter(["", "17", "", "", ""])  # empty is refused for a counted block (no target), then 17
+    monkeypatch.setattr("builtins.input", lambda prompt="": next(answers))
+    record.confirm_counts(segments)
+    assert [s["steps"] for s in segments] == [17, 20, 0]
+    assert all(s["ok"] for s in segments)

@@ -71,8 +71,8 @@ def test_protocols_are_well_formed():
     for name, steps in PROTOCOLS.items():
         assert steps[0].kind == "calibrate", name
         for s in steps:
-            assert s.kind in {"calibrate", "bout", "hold", "transition"}
-            if s.kind in {"hold", "transition", "calibrate"}:
+            assert s.kind in {"calibrate", "bout", "hold", "counted", "transition"}
+            if s.kind in {"hold", "counted", "transition", "calibrate"}:
                 assert s.seconds > 0, s.label
             if s.kind == "bout" and s.optional is None:
                 assert s.target_steps, s.label

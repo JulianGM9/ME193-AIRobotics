@@ -11,6 +11,7 @@ const RATE = 100; // samples per second
 const SNAP_WINDOW = 25; // +/- samples searched when adding or snapping an event
 const PICK_PX = 10; // click this close to a marker to select it
 const MATCH_SAMPLES = 15; // a candidate this close to a saved stride is the same event
+const CHECKED_KINDS = ["bout", "hold", "counted"]; // blocks with a step count (stepnet/labels.py)
 
 const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 
@@ -63,7 +64,7 @@ function countedRange(seg) {
 function inCheckedBlock(seq) {
   // inside the counted part of a bout or no-step block: only these candidates need a decision
   return state.data.meta.segments.some((seg) => {
-    if (seg.kind !== "bout" && seg.kind !== "hold") return false;
+    if (!CHECKED_KINDS.includes(seg.kind)) return false;
     const [first, last] = countedRange(seg);
     return seq >= first && seq < last;
   });
@@ -75,7 +76,7 @@ function segmentOk(seg) {
 
 function segmentChecks() {
   return state.data.meta.segments
-    .filter((seg) => seg.kind === "bout" || seg.kind === "hold")
+    .filter((seg) => CHECKED_KINDS.includes(seg.kind))
     .map((seg) => {
       const [first, last] = countedRange(seg);
       const inside = state.events.filter((e) => e.seq >= first && e.seq < last);
@@ -262,7 +263,7 @@ function drawBands(u) {
     const xs = u.valToPos(tOf(seg.start_seq), "x", true);
     const x0 = u.valToPos(tOf(first), "x", true);
     const x1 = u.valToPos(tOf(last), "x", true);
-    ctx.fillStyle = !segmentOk(seg) ? css("--band-excluded") : seg.kind === "bout" ? css("--band-bout") : css("--band-hold");
+    ctx.fillStyle = !segmentOk(seg) ? css("--band-excluded") : seg.kind === "hold" ? css("--band-hold") : css("--band-bout");
     ctx.fillRect(x0, top, x1 - x0, height);
     if (first > seg.start_seq) {
       ctx.fillStyle = css("--band-hold");
@@ -379,7 +380,7 @@ function drawEventLines(u) {
 function renderTable() {
   const rows = segmentChecks().map(({ seg, strides, undecided, ok, status }) => `
     <tr class="${ok ? "" : "excluded"}">
-      <td>#${seg.i}</td><td>${seg.label}</td><td>${seg.kind === "bout" ? "bout" : "no-step"}</td>
+      <td>#${seg.i}</td><td>${seg.label}</td><td>${seg.kind === "hold" ? "no-step" : seg.kind}</td>
       <td>${seg.steps ?? "?"}</td><td>${strides}${undecided ? ` (+${undecided} undecided)` : ""}</td><td>${2 * strides}</td>
       <td class="status ${status}">${STATUS_TEXT[status]}</td>
       <td><label><input type="checkbox" data-use="${seg.i}" ${ok ? "checked" : ""}> use</label></td>

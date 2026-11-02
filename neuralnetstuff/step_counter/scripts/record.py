@@ -166,17 +166,17 @@ def run_timed(stream, step, voice):
             voice.say("5 seconds.", wait=False)
         time.sleep(1.0)
     end = latest(stream)
-    if step.kind == "hold":
+    if step.kind in ("hold", "counted"):
         voice.beep("Glass")
         voice.say("Stop.", wait=False)
     return start, end
 
 
 def confirm_counts(segments):
-    """At the laptop again: the step count of every bout, plus accidental steps / bad blocks."""
+    """At the laptop again: the step count of every bout and counted block, plus accidental steps / bad blocks."""
     print("\n==== confirm step counts (both feet) ====")
     for seg in segments:
-        if seg["kind"] != "bout":
+        if seg["kind"] not in ("bout", "counted"):
             continue
         target = seg["target_steps"]
         prompt = f"  #{seg['i']:2d} {seg['label']:14s} target {target}: Enter = exactly {target}, or type the real count: " \
@@ -210,7 +210,7 @@ def confirm_counts(segments):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument("--protocol", choices=["A", "B", "test"], required=True)
+    ap.add_argument("--protocol", choices=["A", "B", "C", "test"], required=True)
     ap.add_argument("--stairs", action="store_true", help="include the stairs bouts (protocol A)")
     ap.add_argument("--no-voice", action="store_true", help="printed cues only")
     ap.add_argument("--person", default="julian")
