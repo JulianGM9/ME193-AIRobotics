@@ -7,6 +7,10 @@ What we label: one event per right-foot stride, at the mid-swing minimum of the 
 
 The count check (D7): inside every bout or no-step block that is still marked ok,
 |2 * strides - counted steps| <= 1. Labels can only be saved when every check passes.
+
+A bout's counted range starts at "Go", not at the start of its instruction: moving into
+position while the instruction plays (turning at the top of the stairs, walking back to the
+hallway) is not part of the bout, and Julian doesn't count it (found in Guided session 1).
 """
 import json
 import time
@@ -40,6 +44,11 @@ def find_candidates(samples, meta, params=CANDIDATE_PARAMS) -> list[int]:
     return [int(s) for s in samples[idx, 0]]
 
 
+def counted_range(seg) -> tuple[int, int]:
+    """[first, last) seq whose strides count toward the block's steps (and that training may use)."""
+    return seg.get("go_seq") or seg["start_seq"], seg["end_seq"]
+
+
 def check_segments(meta, strides, segment_ok=None) -> list[dict]:
     """The count check for every bout and no-step block (D7)."""
     strides = np.asarray(sorted(strides), dtype=np.int64)
@@ -49,7 +58,8 @@ def check_segments(meta, strides, segment_ok=None) -> list[dict]:
         if seg["kind"] not in ("bout", "hold"):
             continue
         ok = segment_ok.get(seg["i"], seg.get("ok", True))
-        n = int(((strides >= seg["start_seq"]) & (strides < seg["end_seq"])).sum())
+        first, last = counted_range(seg)
+        n = int(((strides >= first) & (strides < last)).sum())
         steps = seg.get("steps")
         if not ok:
             status = "excluded"

@@ -96,3 +96,13 @@ def test_api(tmp_path):
     assert client.get("/api/sessions/..%2Fx").status_code == 404
     assert client.get("/api/sessions/S999").status_code == 404
     assert "Step Counter" in client.get("/").text
+
+
+def test_strides_before_go_are_not_counted(tmp_path):
+    # Turning into position while the instruction plays (seq 1420) is not part of the bout.
+    _, meta = synthetic_session(tmp_path)
+    strides = [1420] + [1550 + 100 * k for k in range(5)]
+    assert lab.check_segments(meta, strides)[0]["status"] == "fail"  # no Go recorded: 6 strides vs 10 steps
+    meta["segments"][1]["go_seq"] = 1500
+    bout = lab.check_segments(meta, strides)[0]
+    assert (bout["strides"], bout["status"]) == (5, "pass")

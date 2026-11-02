@@ -47,14 +47,15 @@ def test_walking_before_go_and_a_pause_do_not_end_the_bout(monkeypatch):
     # Still walking to the stairs while the instruction plays (seq < 300), a pause at the
     # bottom of the stairs (300-700), then the real climb (700-1200).
     walking = lambda s: s < 300 or 700 <= s < 1200
-    start, end, timed_out = run(walking, already_received=300, monkeypatch=monkeypatch)
+    start, go, end, timed_out = run(walking, already_received=300, monkeypatch=monkeypatch)
     assert not timed_out
     assert end > 1200  # the bug ended the bout during the pause, at ~450
     assert start <= 340
+    assert start <= go < 700  # Go comes after the instruction, before the climb
 
 
 def test_normal_bout_ends_after_walking_stops(monkeypatch):
     walking = lambda s: 400 <= s < 900
-    start, end, timed_out = run(walking, already_received=300, monkeypatch=monkeypatch)
+    start, go, end, timed_out = run(walking, already_received=300, monkeypatch=monkeypatch)
     assert not timed_out
     assert 900 < end < 1150

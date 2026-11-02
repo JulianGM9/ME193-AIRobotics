@@ -124,7 +124,9 @@
       "target_steps": 40,
       "steps": 40,
       "ok": true,
-      "timed_out": false
+      "timed_out": false,
+      "go_seq": 364525,
+      "go_seq_estimated": true
     },
     {
       "i": 6,
@@ -190,7 +192,9 @@
       "target_steps": 30,
       "steps": 30,
       "ok": true,
-      "timed_out": false
+      "timed_out": false,
+      "go_seq": 378065,
+      "go_seq_estimated": true
     },
     {
       "i": 12,

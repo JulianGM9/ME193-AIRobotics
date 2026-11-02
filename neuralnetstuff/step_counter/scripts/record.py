@@ -154,7 +154,7 @@ def run_bout(stream, step, bias, voice):
             break
     voice.beep("Glass")
     voice.say("Done." if not timed_out else "Time is up.", wait=False)
-    return start, end, timed_out
+    return start, go_seq, end, timed_out
 
 
 def run_timed(stream, step, voice):
@@ -245,13 +245,14 @@ def main():
         for i, step in enumerate(steps, start=1):
             if step.kind == "calibrate":
                 continue  # done above, at the laptop
+            go = None
             if step.kind == "bout":
-                start, end, timed_out = run_bout(stream, step, bias, voice)
+                start, go, end, timed_out = run_bout(stream, step, bias, voice)
             else:
                 (start, end), timed_out = run_timed(stream, step, voice), False
-            segments.append({"i": i, "kind": step.kind, "label": step.label, "start_seq": start, "end_seq": end,
-                             "target_steps": step.target_steps, "steps": 0 if step.kind == "hold" else None,
-                             "ok": True, "timed_out": timed_out})
+            segments.append({"i": i, "kind": step.kind, "label": step.label, "start_seq": start, "go_seq": go,
+                             "end_seq": end, "target_steps": step.target_steps,
+                             "steps": 0 if step.kind == "hold" else None, "ok": True, "timed_out": timed_out})
             if stream.tracker.restarts != restarts:
                 raise RuntimeError("the board app restarted mid-session (seq numbers reset)")
         time.sleep(LAG_SAMPLES / 100 + 0.5)  # let the last samples arrive

@@ -113,7 +113,9 @@
       "target_steps": 30,
       "steps": 30,
       "ok": true,
-      "timed_out": false
+      "timed_out": false,
+      "go_seq": 168975,
+      "go_seq_estimated": true
     },
     {
       "i": 5,
@@ -124,7 +126,9 @@
       "target_steps": 40,
       "steps": 40,
       "ok": true,
-      "timed_out": false
+      "timed_out": false,
+      "go_seq": 172315,
+      "go_seq_estimated": true
     },
     {
       "i": 6,
@@ -135,7 +139,9 @@
       "target_steps": 40,
       "steps": 40,
       "ok": true,
-      "timed_out": false
+      "timed_out": false,
+      "go_seq": 175840,
+      "go_seq_estimated": true
     },
     {
       "i": 7,
@@ -146,7 +152,9 @@
       "target_steps": 40,
       "steps": 40,
       "ok": true,
-      "timed_out": false
+      "timed_out": false,
+      "go_seq": 178669,
+      "go_seq_estimated": true
     },
     {
       "i": 8,
@@ -157,7 +165,9 @@
       "target_steps": 30,
       "steps": 30,
       "ok": true,
-      "timed_out": false
+      "timed_out": false,
+      "go_seq": 181039,
+      "go_seq_estimated": true
     },
     {
       "i": 9,
@@ -179,7 +189,9 @@
       "target_steps": null,
       "steps": 24,
       "ok": true,
-      "timed_out": false
+      "timed_out": false,
+      "go_seq": 186834,
+      "go_seq_estimated": true
     },
     {
       "i": 11,
@@ -190,7 +202,9 @@
       "target_steps": null,
       "steps": 24,
       "ok": true,
-      "timed_out": false
+      "timed_out": false,
+      "go_seq": 188989,
+      "go_seq_estimated": true
     },
     {
       "i": 12,
@@ -201,7 +215,9 @@
       "target_steps": 40,
       "steps": 40,
       "ok": true,
-      "timed_out": false
+      "timed_out": false,
+      "go_seq": 191195,
+      "go_seq_estimated": true
     },
     {
       "i": 13,

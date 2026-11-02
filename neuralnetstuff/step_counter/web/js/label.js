@@ -53,10 +53,20 @@ function snap(seq) {
   return state.data.seq[best];
 }
 
+// The part of a block whose strides count: a bout from "Go" (moving into position while the
+// instruction plays is not part of it), a no-step block from its start. Same rule as
+// stepnet/labels.py counted_range().
+function countedRange(seg) {
+  return [seg.go_seq || seg.start_seq, seg.end_seq];
+}
+
 function inCheckedBlock(seq) {
-  // inside a bout or no-step block: only these candidates need a decision
-  return state.data.meta.segments.some((seg) =>
-    (seg.kind === "bout" || seg.kind === "hold") && seq >= seg.start_seq && seq < seg.end_seq);
+  // inside the counted part of a bout or no-step block: only these candidates need a decision
+  return state.data.meta.segments.some((seg) => {
+    if (seg.kind !== "bout" && seg.kind !== "hold") return false;
+    const [first, last] = countedRange(seg);
+    return seq >= first && seq < last;
+  });
 }
 
 function segmentOk(seg) {
@@ -67,7 +77,8 @@ function segmentChecks() {
   return state.data.meta.segments
     .filter((seg) => seg.kind === "bout" || seg.kind === "hold")
     .map((seg) => {
-      const inside = state.events.filter((e) => e.seq >= seg.start_seq && e.seq < seg.end_seq);
+      const [first, last] = countedRange(seg);
+      const inside = state.events.filter((e) => e.seq >= first && e.seq < last);
       const strides = inside.filter((e) => e.status === "accepted").length;
       const undecided = inside.filter((e) => e.status === "proposed").length;
       const ok = segmentOk(seg);
@@ -96,7 +107,9 @@ export async function mountLabel(root) {
   window.addEventListener("resize", resizeCharts);
   window.addEventListener("beforeunload", (e) => { if (state.dirty) e.preventDefault(); });
   await refreshSessions();
-  const first = state.sessions.find((s) => s.label_version == null) || state.sessions[0];
+  // #S005 in the URL opens that session (and reloading keeps you on it)
+  const linked = state.sessions.find((s) => s.session === location.hash.slice(1));
+  const first = linked || state.sessions.find((s) => s.label_version == null) || state.sessions[0];
   if (first) openSession(first.session);
   else document.getElementById("label-main").innerHTML =
     `<div class="empty">No sessions yet. Record one with <code>scripts/record.py</code>.</div>`;
@@ -121,6 +134,7 @@ async function openSession(id) {
   main.innerHTML = `<div class="empty">Loading ${id}…</div>`;
   const data = await api.session(id);
   Object.assign(state, { id, data, selected: -1, dirty: false, segmentOk: {} });
+  history.replaceState(null, "", `#${id}`);
   state.t = data.seq.map(tOf);
 
   if (data.labels) {
@@ -165,7 +179,8 @@ function render(main) {
       <kbd>s</kbd> snap to minimum · <kbd>n</kbd>/<kbd>⇧n</kbd> next/previous undecided · <kbd>z</kbd> zoom to it ·
       <kbd>⌥</kbd>-click add a stride
       <span class="marker-key"><span>▲ accepted</span><span>○ undecided</span><span>× rejected</span>
-        <span>dim ○ outside any block (optional)</span></span>
+        <span>dim ○ outside the counted part of a block (optional)</span>
+        <span>┆ Go: a bout counts from here</span></span>
     </div>
     <div class="chart"><div class="chart-title">Gyro, all axes (deg/s)</div><div id="c-gyr"></div></div>
     <div class="chart"><div class="chart-title">Accelerometer (g)</div><div id="c-acc"></div></div>
@@ -236,16 +251,31 @@ function redraw() {
 }
 
 function drawBands(u) {
-  // Segment backgrounds, under the signal: bouts darker than no-step blocks, excluded in red
+  // Segment backgrounds, under the signal: bouts darker than no-step blocks, excluded in red.
+  // A bout's instruction (before "Go") gets only a faint band with a dashed Go line.
   const { ctx } = u;
   const { top, height } = u.bbox;
   ctx.save();
   for (const seg of state.data.meta.segments) {
     if (seg.kind === "transition" || seg.kind === "calibrate") continue;
-    const x0 = u.valToPos(tOf(seg.start_seq), "x", true);
-    const x1 = u.valToPos(tOf(seg.end_seq), "x", true);
+    const [first, last] = countedRange(seg);
+    const xs = u.valToPos(tOf(seg.start_seq), "x", true);
+    const x0 = u.valToPos(tOf(first), "x", true);
+    const x1 = u.valToPos(tOf(last), "x", true);
     ctx.fillStyle = !segmentOk(seg) ? css("--band-excluded") : seg.kind === "bout" ? css("--band-bout") : css("--band-hold");
     ctx.fillRect(x0, top, x1 - x0, height);
+    if (first > seg.start_seq) {
+      ctx.fillStyle = css("--band-hold");
+      ctx.fillRect(xs, top, x0 - xs, height);
+      ctx.strokeStyle = css("--text-muted");
+      ctx.lineWidth = uPlot.pxRatio;
+      ctx.setLineDash([4 * uPlot.pxRatio, 3 * uPlot.pxRatio]);
+      ctx.beginPath();
+      ctx.moveTo(x0, top);
+      ctx.lineTo(x0, top + height);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
   }
   ctx.restore();
 }
@@ -264,6 +294,8 @@ function drawSegmentLabels(u) {
     const c = checks.get(seg.i);
     if (!c) continue;
     const x = u.valToPos(tOf(seg.start_seq), "x", true) + 4 * uPlot.pxRatio;
+    const room = u.valToPos(tOf(seg.end_seq), "x", true) - x;
+    if (room < 120 * uPlot.pxRatio) continue; // too narrow at this zoom: zoom in to see the label
     const y = u.bbox.top + 4 * uPlot.pxRatio;
     ctx.fillStyle = css("--text-secondary");
     ctx.fillText(`#${seg.i} ${seg.label}`, x, y);
@@ -377,7 +409,8 @@ function onTableClick(e) {
   const act = e.target.dataset.act;
   if (!act) return;
   const seg = state.data.meta.segments.find((s) => s.i === Number(e.target.dataset.i));
-  const inside = (ev) => ev.seq >= seg.start_seq && ev.seq < seg.end_seq;
+  const [first, last] = countedRange(seg);
+  const inside = (ev) => ev.seq >= first && ev.seq < last; // Accept/Reject all: counted part only
   if (act === "show") return zoomTo(tOf(seg.start_seq) - 2, tOf(seg.end_seq) + 2);
   for (const ev of state.events) {
     if (inside(ev) && ev.status === "proposed") ev.status = act === "accept" ? "accepted" : "rejected";
